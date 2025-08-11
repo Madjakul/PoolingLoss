@@ -1,7 +1,7 @@
 # pooling_loss/utils/configs/base_config.py
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional, Union
 

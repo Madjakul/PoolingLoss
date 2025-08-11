@@ -1,7 +1,7 @@
 # pooling_loss/utils/configs/data_config.py
 
 from dataclasses import dataclass
-from typing import Literal, Opptional
+from typing import Literal
 
 from pooling_loss.utils.helpers import DictAccessMixin
 
@@ -14,4 +14,3 @@ class DataConfig(DictAccessMixin):
     max_length: int = 512
     map_batch_size: int = 1000
     load_from_cache_file: bool = True
-    config_name: Optional[str] = None

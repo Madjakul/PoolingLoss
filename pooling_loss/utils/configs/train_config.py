@@ -1,7 +1,7 @@
 # pooling_loss/utils/configs/train_config.py
 
 from dataclasses import dataclass
-from typing import Literal, Optional, Tuple
+from typing import Literal, Optional
 
 from pooling_loss.utils.helpers import DictAccessMixin
 
