@@ -12,6 +12,6 @@ class DataConfig(DictAccessMixin):
     batch_size: int = 32
     tokenizer_name: str = "FacebookAI/roberta-base"
     max_length: int = 512
-    padding: Union[bool, str] = False  # max_length
+    padding: Union[bool, str] = "max_length"  # max_length
     map_batch_size: int = 1000
     load_from_cache_file: bool = False

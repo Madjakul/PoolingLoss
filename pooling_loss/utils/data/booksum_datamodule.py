@@ -1,13 +1,15 @@
-# pooling_loss/utils/data/msmarco_datamodule.py
+# pooling_loss/utils/data/booksum_datamodule.py
 
 import logging
 import os
 import os.path as osp
+from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import datasets
 import lightning as L
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from pooling_loss.utils.helpers import get_tokenizer
 
@@ -15,7 +17,7 @@ if TYPE_CHECKING:
     from pooling_loss.utils.configs.base_config import BaseConfig
 
 
-class MSMarcoDatamodule(L.LightningDataModule):
+class BookSumDatamodule(L.LightningDataModule):
     def __init__(
         self,
         cfg: "BaseConfig",
@@ -66,7 +68,7 @@ class MSMarcoDatamodule(L.LightningDataModule):
             and osp.getsize(self.processed_ds_path) > 0
         ):
             return
-        datasets.load_dataset("microsoft/ms_marco")
+        datasets.load_dataset("kmfoda/booksum")
 
     def setup(self, stage: Optional[str] = None) -> None:
         if stage == "fit" or stage is None:
@@ -86,23 +88,15 @@ class MSMarcoDatamodule(L.LightningDataModule):
 
         logging.info("Processed data not found. Running full preprocessing pipeline...")
         ds = datasets.load_dataset(
-            path="microsoft/ms_marco",
-            name="v1.1",
+            path="kmfoda/booksum",
             cache_dir=self.cache_dir,
         )
-        columns = ds["train"].column_names  # type: ignore
-
-        logging.info("Filtering out train examples with no positive passages...")
+        logging.info("Filtering out train examples with no summary analysis...")
         ds["train"] = ds["train"].filter(  # type: ignore
-            self.filter_no_positive, num_proc=self.num_proc
+            self.filter_summary_length, num_proc=self.num_proc
         )
         logging.info("Creating train triplets from the dataset...")
-        self.train_ds = ds["train"].map(  # type: ignore
-            self.create_triplets,
-            batched=True,
-            num_proc=self.num_proc,
-            remove_columns=columns,
-        )
+        self.train_ds = self.create_triplets(ds["train"])
         logging.info("Tokenizing train triplets...")
         self.train_ds = self.train_ds.map(
             self.tokenize,
@@ -110,17 +104,12 @@ class MSMarcoDatamodule(L.LightningDataModule):
             num_proc=self.num_proc,
             remove_columns=["positive", "negative", "query"],
         )
-        logging.info("Filtering out validation examples with no positive passages...")
+        logging.info("Filtering out validation examples with no summary analysis...")
         ds["validation"] = ds["validation"].filter(  # type: ignore
-            self.filter_no_positive, num_proc=self.num_proc
+            self.filter_summary_length, num_proc=self.num_proc
         )
         logging.info("Creating validation triplets from the dataset...")
-        self.val_ds = ds["validation"].map(  # type: ignore
-            self.create_triplets,
-            batched=True,
-            num_proc=self.num_proc,
-            remove_columns=columns,
-        )
+        self.val_ds = self.create_triplets(ds["validation"])
         logging.info("Tokenizing validation triplets...")
         self.val_ds = self.val_ds.map(
             self.tokenize,
@@ -148,23 +137,15 @@ class MSMarcoDatamodule(L.LightningDataModule):
 
         logging.info("Processed data not found. Running full preprocessing pipeline...")
         ds = datasets.load_dataset(
-            path="microsoft/ms_marco",
-            name="v1.1",
+            path="kmfoda/booksum",
             cache_dir=self.cache_dir,
         )
-        columns = ds["test"].column_names  # type: ignore
-
-        logging.info("Filtering out test examples with no positive passages...")
+        logging.info("Filtering out test examples with no summary analysis...")
         ds["test"] = ds["test"].filter(  # type: ignore
-            self.filter_no_positive, num_proc=self.num_proc
+            self.filter_summary_length, num_proc=self.num_proc
         )
         logging.info("Creating test triplets from the dataset...")
-        self.test_ds = ds["test"].map(  # type: ignore
-            self.create_triplets,
-            batched=True,
-            num_proc=self.num_proc,
-            remove_columns=columns,
-        )
+        self.test_ds = self.create_triplets(ds["test"])
         logging.info("Tokenizing test triplets...")
         self.test_ds = self.test_ds.map(
             self.tokenize,
@@ -182,7 +163,7 @@ class MSMarcoDatamodule(L.LightningDataModule):
 
     def train_dataloader(self) -> DataLoader:
         if self.cfg.mode == "tune":
-            logging.info(f"Using a 1% subset of MSMarco for tuning.")
+            logging.info(f"Using a 1% subset of Booksum for tuning.")
             num_samples = int(len(self.train_ds) * 0.01)
             train_ds = self.train_ds.select(range(num_samples))  # type: ignore
         else:
@@ -209,36 +190,46 @@ class MSMarcoDatamodule(L.LightningDataModule):
         )
 
     @staticmethod
-    def filter_no_positive(example: Dict[str, Any]) -> bool:
-        """Filter out examples that have no positive passage."""
-        return 1 in example["passages"]["is_selected"]
+    def filter_summary_length(example: Dict[str, Any]) -> bool:
+        """Filter out examples that have no summary analysis."""
+        return (
+            example["analysis_length"] > 2
+            # and example["analysis_length"] <= 510
+            and example["summary_length"] > 2
+            # and example["summary_length"] <= 510
+        )
 
     @staticmethod
-    def create_triplets(batch: Dict[str, Any]) -> Dict[str, List[Any]]:
-        """Map function to transform a batch of MS MARCO examples into query,
-        positive, negative text triplets."""
+    def create_triplets(split_ds: datasets.Dataset) -> datasets.Dataset:
+        """Transform Booksum examples into query, positive, negative text
+        triplets."""
         queries = []
         positives = []
         negatives = []
 
-        for i in range(len(batch["query"])):
-            query_text = batch["query"][i]
-            passages = batch["passages"][i]
+        book_chapters = defaultdict(list)
+        for example in tqdm(split_ds):
+            book_chapters[example["bid"]].append(
+                {
+                    "summary_text": example["summary_text"],
+                    "summary_analysis": example["summary_analysis"],
+                }
+            )
 
-            try:
-                positive_idx = passages["is_selected"].index(1)
-                positive_text = passages["passage_text"][positive_idx]
-            except ValueError:
-                # Should not happen if we filter first, but as a safeguard
-                continue
+        for bid, chapters in tqdm(book_chapters.items()):
+            if len(chapters) < 2:
+                continue  # Need at least one negative
+            for i, chap in enumerate(chapters):
+                query_text = chap["summary_text"]
+                positive_text = chap["summary_analysis"]
+                for j in range(len(chapters)):
+                    if i == j:
+                        continue
+                    negative_text = chapters[j]["summary_analysis"]
+                    queries.append(query_text)
+                    positives.append(positive_text)
+                    negatives.append(negative_text)
 
-            # Use other passages as hard negatives
-            for j, is_selected in enumerate(passages["is_selected"]):
-                if is_selected:
-                    continue
-                negative_text = passages["passage_text"][j]
-                queries.append(query_text)
-                positives.append(positive_text)
-                negatives.append(negative_text)
-
-        return {"query": queries, "positive": positives, "negative": negatives}
+        return datasets.Dataset.from_dict(
+            {"query": queries, "positive": positives, "negative": negatives}
+        )
