@@ -34,19 +34,19 @@ class AllNLIDatamodule(L.LightningDataModule):
         tokenized_q = self.tokenizer(
             batch["anchor"],
             truncation=True,
-            padding="max_length",
+            padding=self.cfg.data.padding,
             max_length=self.cfg.data.max_length,
         )
         tokenized_pos = self.tokenizer(
             batch["positive"],
             truncation=True,
-            padding="max_length",
+            padding=self.cfg.data.padding,
             max_length=self.cfg.data.max_length,
         )
         tokenized_neg = self.tokenizer(
             batch["negative"],
             truncation=True,
-            padding="max_length",
+            padding=self.cfg.data.padding,
             max_length=self.cfg.data.max_length,
         )
         return {
@@ -56,6 +56,7 @@ class AllNLIDatamodule(L.LightningDataModule):
             "pos_attention_mask": tokenized_pos["attention_mask"],
             "neg_input_ids": tokenized_neg["input_ids"],
             "neg_attention_mask": tokenized_neg["attention_mask"],
+            "length": [sum(mask) for mask in tokenized_q["attention_mask"]],
         }
 
     def prepare_data(self) -> None:

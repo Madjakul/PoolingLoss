@@ -1,7 +1,7 @@
 # pooling_loss/utils/configs/data_config.py
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Union
 
 from pooling_loss.utils.helpers import DictAccessMixin
 
@@ -12,5 +12,6 @@ class DataConfig(DictAccessMixin):
     batch_size: int = 32
     tokenizer_name: str = "FacebookAI/roberta-base"
     max_length: int = 512
+    padding: Union[bool, str] = False  # max_length
     map_batch_size: int = 1000
-    load_from_cache_file: bool = True
+    load_from_cache_file: bool = False
