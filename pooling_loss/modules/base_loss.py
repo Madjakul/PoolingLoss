@@ -1,17 +1,35 @@
 # pooling_loss/modules/base_loss.py
 
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from jaxtyping import Float, Int
 
+from pooling_loss.modules.dynamic_late_interaction import DynamicLateInteraction
+from pooling_loss.modules.late_interaction import LateInteraction
+
+if TYPE_CHECKING:
+    from pooling_loss.utils.configs import BaseConfig
+
 
 class BaseLoss(ABC, nn.Module):
 
-    def __init__(self, *args, **kwargs) -> None:
-        pass
+    def __init__(self, cfg: "BaseConfig", pooling_method: str, **kwargs) -> None:
+        self.cfg = cfg
+        assert pooling_method in [
+            "dli",
+            "li",
+            "mean",
+        ], f"Invalid pooling method: {pooling_method}"
+        if pooling_method == "dli":
+            self.pool = DynamicLateInteraction(self.cfg)
+        elif pooling_method == "li":
+            self.pool = LateInteraction(self.cfg)
+        else:
+            self.pool = self.mean_pooling
 
     @abstractmethod
     def forward(self, *args, **kwargs):
