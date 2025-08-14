@@ -17,16 +17,16 @@ if TYPE_CHECKING:
 
 class BaseLoss(ABC, nn.Module):
 
-    def __init__(self, cfg: "BaseConfig", pooling_method: str, **kwargs) -> None:
+    def __init__(self, cfg: "BaseConfig", **kwargs) -> None:
         self.cfg = cfg
-        assert pooling_method in [
+        assert self.cfg.model.pooling_method in [
             "dli",
             "li",
             "mean",
-        ], f"Invalid pooling method: {pooling_method}"
-        if pooling_method == "dli":
+        ], f"Invalid pooling method: {self.cfg.model.pooling_method}"
+        if self.cfg.model.pooling_method == "dli":
             self.pool = DynamicLateInteraction(self.cfg)
-        elif pooling_method == "li":
+        elif self.cfg.model.pooling_method == "li":
             self.pool = LateInteraction(self.cfg)
         else:
             self.pool = self.mean_pooling

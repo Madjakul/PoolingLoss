@@ -15,9 +15,9 @@ if TYPE_CHECKING:
 class TripletLoss(BaseLoss):
 
     def __init__(self, cfg: "BaseConfig") -> None:
-        super().__init__(cfg=cfg, pooling_method=cfg.model.pooling_method)
+        super().__init__(cfg)
         assert (
-            cfg.execution.margin is not None
+            self.cfg.execution.margin is not None
         ), "Margin must be set in the configuration for DynamicTripletLoss"
 
     def forward(

@@ -3,7 +3,6 @@
 from typing import TYPE_CHECKING, Dict, Optional
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from jaxtyping import Float, Int
 
@@ -16,9 +15,9 @@ if TYPE_CHECKING:
 class DynamicTripletLoss(BaseLoss):
 
     def __init__(self, cfg: "BaseConfig") -> None:
-        super().__init__(cfg=cfg, pooling_method=cfg.model.pooling_method)
+        super().__init__(cfg)
         assert (
-            cfg.execution.margin is not None
+            self.cfg.execution.margin is not None
         ), "Margin must be set in the configuration for DynamicTripletLoss"
 
     def forward(
@@ -50,7 +49,7 @@ class DynamicTripletLoss(BaseLoss):
         neg_dists = all_dists[targets, targets + batch_size]
 
         dynamic_margin = self.cfg.execution.margin / q_mask_sum.float()  # shape: (B,)
-        loss = F.relu(pos_dists - neg_dists + dynamic_margin).mean()  # type: ignore
+        loss = F.relu(pos_dists - neg_dists + dynamic_margin).mean()
 
         return {
             "all_scores": all_scores,
