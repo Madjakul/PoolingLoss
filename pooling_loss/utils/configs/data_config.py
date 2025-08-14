@@ -15,3 +15,4 @@ class DataConfig(DictAccessMixin):
     padding: Union[bool, str] = "max_length"  # max_length
     map_batch_size: int = 1000
     load_from_cache_file: bool = False
+    shuffle: bool = False

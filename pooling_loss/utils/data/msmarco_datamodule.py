@@ -191,7 +191,7 @@ class MSMarcoDatamodule(L.LightningDataModule):
             train_ds,  # type: ignore
             batch_size=self.cfg.data.batch_size,
             num_workers=self.num_proc,
-            shuffle=True,
+            shuffle=self.cfg.data.shuffle,
         )
 
     def val_dataloader(self) -> DataLoader:

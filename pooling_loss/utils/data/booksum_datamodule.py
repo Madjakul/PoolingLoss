@@ -96,7 +96,7 @@ class BookSumDatamodule(L.LightningDataModule):
             self.filter_summary_length, num_proc=self.num_proc
         )
         logging.info("Creating train triplets from the dataset...")
-        self.train_ds = self.create_triplets(ds["train"])
+        self.train_ds = self.create_triplets(ds["train"])  # type: ignore
         logging.info("Tokenizing train triplets...")
         self.train_ds = self.train_ds.map(
             self.tokenize,
@@ -109,7 +109,7 @@ class BookSumDatamodule(L.LightningDataModule):
             self.filter_summary_length, num_proc=self.num_proc
         )
         logging.info("Creating validation triplets from the dataset...")
-        self.val_ds = self.create_triplets(ds["validation"])
+        self.val_ds = self.create_triplets(ds["validation"])  # type: ignore
         logging.info("Tokenizing validation triplets...")
         self.val_ds = self.val_ds.map(
             self.tokenize,
@@ -145,7 +145,7 @@ class BookSumDatamodule(L.LightningDataModule):
             self.filter_summary_length, num_proc=self.num_proc
         )
         logging.info("Creating test triplets from the dataset...")
-        self.test_ds = self.create_triplets(ds["test"])
+        self.test_ds = self.create_triplets(ds["test"])  # type: ignore
         logging.info("Tokenizing test triplets...")
         self.test_ds = self.test_ds.map(
             self.tokenize,
@@ -172,7 +172,7 @@ class BookSumDatamodule(L.LightningDataModule):
             train_ds,  # type: ignore
             batch_size=self.cfg.data.batch_size,
             num_workers=self.num_proc,
-            shuffle=True,
+            shuffle=self.cfg.data.shuffle,
         )
 
     def val_dataloader(self) -> DataLoader:
@@ -209,14 +209,14 @@ class BookSumDatamodule(L.LightningDataModule):
 
         book_chapters = defaultdict(list)
         for example in tqdm(split_ds):
-            book_chapters[example["bid"]].append(
+            book_chapters[example["bid"]].append(  # type: ignore
                 {
-                    "summary_text": example["summary_text"],
-                    "summary_analysis": example["summary_analysis"],
+                    "summary_text": example["summary_text"],  # type: ignore
+                    "summary_analysis": example["summary_analysis"],  # type: ignore
                 }
             )
 
-        for bid, chapters in tqdm(book_chapters.items()):
+        for _, chapters in tqdm(book_chapters.items()):
             if len(chapters) < 2:
                 continue  # Need at least one negative
             for i, chap in enumerate(chapters):

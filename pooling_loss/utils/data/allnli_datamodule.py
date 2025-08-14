@@ -56,7 +56,7 @@ class AllNLIDatamodule(L.LightningDataModule):
             "pos_attention_mask": tokenized_pos["attention_mask"],
             "neg_input_ids": tokenized_neg["input_ids"],
             "neg_attention_mask": tokenized_neg["attention_mask"],
-            "length": [sum(mask) for mask in tokenized_q["attention_mask"]],
+            "length": [sum(mask) for mask in tokenized_q["attention_mask"]],  # type: ignore
         }
 
     def prepare_data(self) -> None:
@@ -155,7 +155,7 @@ class AllNLIDatamodule(L.LightningDataModule):
             train_ds,  # type: ignore
             batch_size=self.cfg.data.batch_size,
             num_workers=self.num_proc,
-            shuffle=True,
+            shuffle=self.cfg.data.shuffle,
         )
 
     def val_dataloader(self) -> DataLoader:
