@@ -19,6 +19,7 @@ class TrainConfig(DictAccessMixin):
     ] = "info-nce"
     tau: float = 0.07
     margin: Optional[float] = None  # Only if margin-based lolss
+    weighting: Optional[Literal["log", "sqrt", "none"]] = None
     # --- optimizer ---
     lr: float = 1e-5
     weight_decay: float = 0.01

@@ -19,6 +19,7 @@ class TuneConfig(DictAccessMixin):
     ] = "info-nce"
     tau: Dict = field(default_factory=dict)
     margin: Optional[float] = None  # Only if margin-based lolss
+    weighting: Optional[Literal["log", "sqrt", "none"]] = None
     # --- optimizer ---
     lr: Dict = field(default_factory=dict)
     weight_decay: Dict = field(default_factory=dict)

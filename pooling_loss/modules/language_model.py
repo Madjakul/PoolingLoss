@@ -1,7 +1,7 @@
 # pooling_loss/modules/language_model.py
 
 import logging
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Tuple
 
 import torch
 import torch.nn as nn

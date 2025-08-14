@@ -1,6 +1,6 @@
 # pooling_loss/modules/modeling_pooling_loss.py
 
-import Lightning
+import lightning as L
 import torch
 
 
