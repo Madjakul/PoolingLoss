@@ -164,8 +164,10 @@ class BookSumDatamodule(L.LightningDataModule):
     def train_dataloader(self) -> DataLoader:
         if self.cfg.mode == "tune":
             logging.info(f"Using a 1% subset of Booksum for tuning.")
-            num_samples = int(len(self.train_ds) * 0.01)
-            train_ds = self.train_ds.select(range(num_samples))  # type: ignore
+            num_samples = int(len(self.train_ds) * 0.005)
+            head = self.train_ds.select(range(num_samples))  # type: ignore
+            tail = self.train_ds.select(reversed(range(num_samples)))  # type: ignore
+            train_ds = datasets.concatenate_datasets([head, tail]).sort("length")
         else:
             train_ds = self.train_ds
         return DataLoader(

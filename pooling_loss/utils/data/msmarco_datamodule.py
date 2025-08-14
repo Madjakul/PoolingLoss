@@ -102,6 +102,7 @@ class MSMarcoDatamodule(L.LightningDataModule):
             batched=True,
             num_proc=self.num_proc,
             remove_columns=columns,
+            load_from_cache_file=self.cfg.data.load_from_cache_file,
         )
         logging.info("Tokenizing train triplets...")
         self.train_ds = self.train_ds.map(
@@ -109,6 +110,7 @@ class MSMarcoDatamodule(L.LightningDataModule):
             batched=True,
             num_proc=self.num_proc,
             remove_columns=["positive", "negative", "query"],
+            load_from_cache_file=self.cfg.data.load_from_cache_file,
         )
         logging.info("Filtering out validation examples with no positive passages...")
         ds["validation"] = ds["validation"].filter(  # type: ignore
@@ -120,6 +122,7 @@ class MSMarcoDatamodule(L.LightningDataModule):
             batched=True,
             num_proc=self.num_proc,
             remove_columns=columns,
+            load_from_cache_file=self.cfg.data.load_from_cache_file,
         )
         logging.info("Tokenizing validation triplets...")
         self.val_ds = self.val_ds.map(
@@ -127,6 +130,7 @@ class MSMarcoDatamodule(L.LightningDataModule):
             batched=True,
             num_proc=self.num_proc,
             remove_columns=["positive", "negative", "query"],
+            load_from_cache_file=self.cfg.data.load_from_cache_file,
         )
 
         self.train_ds.set_format("torch")
@@ -164,6 +168,7 @@ class MSMarcoDatamodule(L.LightningDataModule):
             batched=True,
             num_proc=self.num_proc,
             remove_columns=columns,
+            load_from_cache_file=self.cfg.data.load_from_cache_file,
         )
         logging.info("Tokenizing test triplets...")
         self.test_ds = self.test_ds.map(
@@ -171,6 +176,7 @@ class MSMarcoDatamodule(L.LightningDataModule):
             batched=True,
             num_proc=self.num_proc,
             remove_columns=["positive", "negative", "query"],
+            load_from_cache_file=self.cfg.data.load_from_cache_file,
         )
 
         self.test_ds.set_format("torch")
@@ -183,8 +189,10 @@ class MSMarcoDatamodule(L.LightningDataModule):
     def train_dataloader(self) -> DataLoader:
         if self.cfg.mode == "tune":
             logging.info(f"Using a 1% subset of MSMarco for tuning.")
-            num_samples = int(len(self.train_ds) * 0.01)
-            train_ds = self.train_ds.select(range(num_samples))  # type: ignore
+            num_samples = int(len(self.train_ds) * 0.005)
+            head = self.train_ds.select(range(num_samples))  # type: ignore
+            tail = self.train_ds.select(reversed(range(num_samples)))  # type: ignore
+            train_ds = datasets.concatenate_datasets([head, tail]).sort("length")
         else:
             train_ds = self.train_ds
         return DataLoader(

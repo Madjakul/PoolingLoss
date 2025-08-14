@@ -97,12 +97,14 @@ class AllNLIDatamodule(L.LightningDataModule):
             batched=True,
             num_proc=self.num_proc,
             remove_columns=columns,
+            load_from_cache_file=self.cfg.data.load_from_cache_file,
         )
         self.val_ds = ds["dev"].map(  # type: ignore
             self.tokenize,
             batched=True,
             num_proc=self.num_proc,
             remove_columns=columns,
+            load_from_cache_file=self.cfg.data.load_from_cache_file,
         )
 
         self.train_ds.set_format("torch")
@@ -135,6 +137,7 @@ class AllNLIDatamodule(L.LightningDataModule):
             batched=True,
             num_proc=self.num_proc,
             remove_columns=columns,
+            load_from_cache_file=self.cfg.data.load_from_cache_file,
         )
 
         self.test_ds.set_format("torch")
@@ -147,8 +150,10 @@ class AllNLIDatamodule(L.LightningDataModule):
     def train_dataloader(self) -> DataLoader:
         if self.cfg.mode == "tune":
             logging.info(f"Using a 2% subset of AllNLI for tuning.")
-            num_samples = int(len(self.train_ds) * 0.02)
-            train_ds = self.train_ds.select(range(num_samples))  # type: ignore
+            num_samples = int(len(self.train_ds) * 0.01)
+            head = self.train_ds.select(range(num_samples))  # type: ignore
+            tail = self.train_ds.select(reversed(range(num_samples)))  # type: ignore
+            train_ds = datasets.concatenate_datasets([head, tail]).sort("length")
         else:
             train_ds = self.train_ds
         return DataLoader(
