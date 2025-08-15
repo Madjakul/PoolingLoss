@@ -19,6 +19,7 @@ class TripletLoss(BaseLoss):
         assert (
             self.cfg.execution.margin is not None
         ), "Margin must be set in the configuration for DynamicTripletLoss"
+        self.register_buffer("margin", torch.tensor(self.cfg.execution.margin))
 
     def forward(
         self,
@@ -47,7 +48,7 @@ class TripletLoss(BaseLoss):
         negs = all_scores[targets, targets + batch_size]
         neg_dists = all_dists[targets, targets + batch_size]
 
-        loss = F.relu(pos_dists - neg_dists + self.cfg.execution.margin).mean()  # type: ignore
+        loss = F.relu(pos_dists - neg_dists + self.margin).mean()  # type: ignore
 
         return {
             "all_scores": all_scores,

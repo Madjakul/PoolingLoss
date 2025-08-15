@@ -19,6 +19,7 @@ class DynamicTripletLoss(BaseLoss):
         assert (
             self.cfg.execution.margin is not None
         ), "Margin must be set in the configuration for DynamicTripletLoss"
+        self.register_buffer("margin", torch.tensor(self.cfg.execution.margin))
 
     def forward(
         self,
@@ -48,15 +49,11 @@ class DynamicTripletLoss(BaseLoss):
         negs = all_scores[targets, targets + batch_size]
         neg_dists = all_dists[targets, targets + batch_size]
         if self.cfg.execution.weighting == "log":
-            dynamic_margin = self.cfg.execution.margin / torch.log(
-                q_mask_sum.float() + 1
-            )
+            dynamic_margin = self.margin / torch.log(q_mask_sum.float() + 1)
         elif self.cfg.execution.weighting == "sqrt":
-            dynamic_margin = self.cfg.execution.margin / torch.sqrt(
-                q_mask_sum.float() + 1e-8
-            )
+            dynamic_margin = self.margin / torch.sqrt(q_mask_sum.float() + 1e-8)
         else:
-            dynamic_margin = self.cfg.execution.margin / q_mask_sum.float()
+            dynamic_margin = self.margin / q_mask_sum.float()
 
         loss = F.relu(pos_dists - neg_dists + dynamic_margin).mean()
 
