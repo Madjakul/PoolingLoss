@@ -2,7 +2,7 @@ import torch
 from lightning.pytorch.callbacks import Callback
 
 
-class PositionalEmbeddingMonitor(Callback):
+class PositionalEmbeddingsMonitor(Callback):
     """Measures how much positional signal is present in the final
     embeddings."""
 
