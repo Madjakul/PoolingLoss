@@ -17,6 +17,7 @@ class DynamicInfoNCELoss(BaseLoss):
     def __init__(self, cfg: "BaseConfig") -> None:
         super().__init__(cfg)
         self.register_buffer("tau", torch.tensor(self.cfg.execution.tau))
+        self.register_buffer("exp", torch.exp(torch.tensor(1)))
 
     def forward(
         self,
@@ -24,7 +25,6 @@ class DynamicInfoNCELoss(BaseLoss):
         key_embs: Float[torch.Tensor, "two_times_batch seq hidden"],
         q_mask: Int[torch.Tensor, "batch seq"],
         k_mask: Int[torch.Tensor, "two_times_batch seq"],
-        gumbel_temp: Optional[float] = None,
     ) -> Dict[str, torch.Tensor]:
         batch_size = query_embs.size(0)
 
@@ -34,7 +34,6 @@ class DynamicInfoNCELoss(BaseLoss):
             key_embs=key_embs,  # (2B, S, H)
             q_mask=q_mask,  # (B, S)
             k_mask=k_mask,  # (2B, S)
-            gumbel_temp=gumbel_temp,
         )
         all_scaled_scores = all_scores / self.tau  # type: ignore
 
@@ -46,11 +45,9 @@ class DynamicInfoNCELoss(BaseLoss):
         q_mask_sum = q_mask.sum(dim=1).float()
         per_sample_loss = per_sample_loss / torch.log(q_mask_sum + 1)
         if self.cfg.execution.weighting == "log":
-            w = 1.0 / torch.log(q_mask_sum + 1)  # Avoid division by zero
-        elif self.cfg.execution.weighting == "sqrt":
-            w = 1.0 / torch.sqrt(q_mask_sum + 1e-8)
+            w = torch.log(self.exp + q_mask_sum - 3)
         else:
-            w = 1.0 / q_mask_sum
+            w = torch.sqrt(1 + q_mask_sum - 3)
         loss = (per_sample_loss * w).mean()
 
         return {

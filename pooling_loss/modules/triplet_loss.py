@@ -1,6 +1,6 @@
 # pooling_loss/modules/triplet_loss.py
 
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict
 
 import torch
 import torch.nn.functional as F
@@ -27,7 +27,6 @@ class TripletLoss(BaseLoss):
         key_embs: Float[torch.Tensor, "two_times_batch seq hidden"],
         q_mask: Int[torch.Tensor, "batch seq"],
         k_mask: Int[torch.Tensor, "two_times_batch seq"],
-        gumbel_temp: Optional[float] = None,
     ) -> Dict[str, torch.Tensor]:
         batch_size = query_embs.size(0)
 
@@ -37,7 +36,6 @@ class TripletLoss(BaseLoss):
             key_embs=key_embs,  # (2B, S, H)
             q_mask=q_mask,  # (B, S)
             k_mask=k_mask,  # (2B, S)
-            gumbel_temp=gumbel_temp,
         )
 
         all_dists = 1 - all_scores
