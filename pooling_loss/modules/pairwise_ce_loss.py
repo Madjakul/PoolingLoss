@@ -1,6 +1,6 @@
 # pooling_loss/modules/pairwise_ce_loss.py
 
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict
 
 import torch
 import torch.nn.functional as F

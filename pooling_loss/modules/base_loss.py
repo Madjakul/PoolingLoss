@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 class BaseLoss(ABC, nn.Module):
 
-    def __init__(self, cfg: "BaseConfig", **kwargs) -> None:
+    def __init__(self, cfg: "BaseConfig") -> None:
         self.cfg = cfg
         assert self.cfg.model.pooling_method in [
             "dli",
@@ -41,7 +41,6 @@ class BaseLoss(ABC, nn.Module):
         key_embs: Float[torch.Tensor, "two_times_batch seq hidden"],
         q_mask: Int[torch.Tensor, "batch seq"],
         k_mask: Int[torch.Tensor, "two_times_batch seq"],
-        **kwargs,
     ) -> Float[torch.Tensor, "batch two_times_batch"]:
         # Mean pooling and normalization
         query_vec = (query_embs * q_mask.unsqueeze(-1)).sum(dim=1)
