@@ -10,7 +10,7 @@ from jaxtyping import Float, Int
 
 from pooling_loss.modules.dynamic_late_interaction import DynamicLateInteraction
 from pooling_loss.modules.late_interaction import LateInteraction
-from pooling_loss.modules.stabilized_late_interaction import StabilizedLateIntercation
+from pooling_loss.modules.stabilized_late_interaction import StabilizedLateInteraction
 
 if TYPE_CHECKING:
     from pooling_loss.utils.configs import BaseConfig
@@ -33,7 +33,7 @@ class BaseLoss(ABC, nn.Module):
         elif self.cfg.model.pooling_method == "li":
             self.pool = LateInteraction(self.cfg)
         elif self.cfg.model.pooling_method == "average_li":
-            self.pool = StabilizedLateIntercation(self.cfg)
+            self.pool = StabilizedLateInteraction(self.cfg)
         else:
             self.pool = DynamicLateInteraction(self.cfg)
 
