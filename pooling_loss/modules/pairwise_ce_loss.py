@@ -16,6 +16,9 @@ class PairwiseCELoss(BaseLoss):
 
     def __init__(self, cfg: "BaseConfig") -> None:
         super().__init__(cfg)
+        assert (
+            self.cfg.execution.tau is not None
+        ), "Temperature must be set in the configuration for pariwise CE loss"
         self.register_buffer("tau", torch.tensor(self.cfg.execution.tau))
 
     def forward(

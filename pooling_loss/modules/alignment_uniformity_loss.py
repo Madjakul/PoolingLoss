@@ -3,13 +3,12 @@
 from typing import Dict
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 from jaxtyping import Float, Int
 
-from pooling_loss.modules.base_loss import BaseLoss
 
-
-class AlignmentUniformityLoss(BaseLoss):
+class AlignmentUniformityLoss(nn.Module):
 
     def forward(
         self,
@@ -53,8 +52,9 @@ class AlignmentUniformityLoss(BaseLoss):
             pairwise_dists.size(0), dtype=torch.bool, device=pairwise_dists.device
         )
         valid_dists = pairwise_dists[mask]
-        uniformity_loss = torch.logsumexp(-2 * valid_dists, dim=0) - torch.log(
+        log_uniformity_loss = torch.logsumexp(-2 * valid_dists, dim=0) - torch.log(
             torch.tensor(valid_dists.size(0), dtype=torch.float)
         )
+        uniformity_loss = torch.exp(log_uniformity_loss)
 
         return {"alignment_loss": alignment_loss, "uniformity_loss": uniformity_loss}

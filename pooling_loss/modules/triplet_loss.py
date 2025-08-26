@@ -18,7 +18,7 @@ class TripletLoss(BaseLoss):
         super().__init__(cfg)
         assert (
             self.cfg.execution.margin is not None
-        ), "Margin must be set in the configuration for DynamicTripletLoss"
+        ), "Margin must be set in the configuration for triplet loss"
         self.register_buffer("margin", torch.tensor(self.cfg.execution.margin))
 
     def forward(

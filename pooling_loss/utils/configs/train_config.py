@@ -17,8 +17,8 @@ class TrainConfig(DictAccessMixin):
         "dynamic-margin",
         "dynamic-triplet",
     ] = "info-nce"
-    tau: float = 0.07
-    margin: Optional[float] = None  # Only if margin-based lolss
+    tau: Optional[float] = None  # Only for CE losses
+    margin: Optional[float] = None  # Only for triplet loss
     # --- optimizer ---
     lr: float = 1e-5
     weight_decay: float = 0.01

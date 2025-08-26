@@ -18,6 +18,10 @@ class DynamicLateInteraction(torch.nn.Module):
         self.register_buffer("EPS", torch.tensor(1e-8))
         self.register_buffer("IGNORE", torch.tensor(float("-inf")))
         self.register_buffer("NAN", torch.tensor(float("nan")))
+        if self.cfg.model.pooling_method == "quantile_li":
+            assert (
+                self.cfg.model.q is not None
+            ), "Quantile value must be set for quantile_li pooling method"
 
     def forward(
         self,

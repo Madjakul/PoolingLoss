@@ -1,9 +1,9 @@
-# tests/test_info_nce_loss.py
+# tests/test_pairwise_ce_loss.py
 
 import pytest
 import torch
 
-from pooling_loss.modules import InfoNCELoss
+from pooling_loss.modules import PairwiseCELoss
 from pooling_loss.utils.configs import BaseConfig
 
 BATCH_SIZE = 2
@@ -40,11 +40,11 @@ def test_li_forward(q_embs, k_embs, q_mask, k_mask):
     cfg.model.pooling_method = "li"
     cfg.data.max_length = SEQUENCE_LENGTH
     cfg.train.tau = 0.07
-    loss_fn = InfoNCELoss(cfg)
+    loss_fn = PairwiseCELoss(cfg)
 
     loss_metrics = loss_fn(q_embs, k_embs, q_mask, k_mask)
 
-    assert not torch.isnan(loss_metrics["loss"]), "infoNCE loss is NaN"
+    assert not torch.isnan(loss_metrics["loss"]), "Pairwise CE loss is NaN"
     assert loss_metrics["loss"] >= 0
     assert loss_metrics["all_scores"].shape == (
         BATCH_SIZE,
@@ -65,11 +65,11 @@ def test_stabilized_li_forward(q_embs, k_embs, q_mask, k_mask):
     cfg.model.pooling_method = "average_li"
     cfg.data.max_length = SEQUENCE_LENGTH
     cfg.train.tau = 0.07
-    loss_fn = InfoNCELoss(cfg)
+    loss_fn = PairwiseCELoss(cfg)
 
     loss_metrics = loss_fn(q_embs, k_embs, q_mask, k_mask)
 
-    assert not torch.isnan(loss_metrics["loss"]), "infoNCE loss is NaN"
+    assert not torch.isnan(loss_metrics["loss"]), "Pairwise CE loss is NaN"
     assert loss_metrics["loss"] >= 0
     assert loss_metrics["all_scores"].shape == (
         BATCH_SIZE,
@@ -90,11 +90,11 @@ def test_dynamic_mean_li_forward(q_embs, k_embs, q_mask, k_mask):
     cfg.model.pooling_method = "mean_li"
     cfg.train.tau = 0.07
     cfg.data.max_length = SEQUENCE_LENGTH
-    loss_fn = InfoNCELoss(cfg)
+    loss_fn = PairwiseCELoss(cfg)
 
     loss_metrics = loss_fn(q_embs, k_embs, q_mask, k_mask)
 
-    assert not torch.isnan(loss_metrics["loss"]), "infoNCE loss is NaN"
+    assert not torch.isnan(loss_metrics["loss"]), "Pairwise CE loss is NaN"
     assert loss_metrics["loss"] >= 0
     assert loss_metrics["all_scores"].shape == (
         BATCH_SIZE,
@@ -110,11 +110,11 @@ def test_dynamic_li_median_forward(q_embs, k_embs, q_mask, k_mask):
     cfg.model.pooling_method = "median_li"
     cfg.train.tau = 0.07
     cfg.data.max_length = SEQUENCE_LENGTH
-    loss_fn = InfoNCELoss(cfg)
+    loss_fn = PairwiseCELoss(cfg)
 
     loss_metrics = loss_fn(q_embs, k_embs, q_mask, k_mask)
 
-    assert not torch.isnan(loss_metrics["loss"]), "infoNCE loss is NaN"
+    assert not torch.isnan(loss_metrics["loss"]), "Pairwise CE loss is NaN"
     assert loss_metrics["loss"] >= 0
     assert loss_metrics["all_scores"].shape == (
         BATCH_SIZE,
@@ -131,11 +131,11 @@ def test_dynamic_li_quantile_forward(q_embs, k_embs, q_mask, k_mask):
     cfg.train.tau = 0.07
     cfg.data.max_length = SEQUENCE_LENGTH
     cfg.model.q = 0.75
-    loss_fn = InfoNCELoss(cfg)
+    loss_fn = PairwiseCELoss(cfg)
 
     loss_metrics = loss_fn(q_embs, k_embs, q_mask, k_mask)
 
-    assert not torch.isnan(loss_metrics["loss"]), "infoNCE loss is NaN"
+    assert not torch.isnan(loss_metrics["loss"]), "Pairwise CE loss is NaN"
     assert loss_metrics["loss"] >= 0
     assert loss_metrics["all_scores"].shape == (
         BATCH_SIZE,
@@ -150,11 +150,11 @@ def test_mean_pooling_forward(q_embs, k_embs, q_mask, k_mask):
     cfg = BaseConfig()
     cfg.model.pooling_method = "mean"
     cfg.train.tau = 0.07
-    loss_fn = InfoNCELoss(cfg)
+    loss_fn = PairwiseCELoss(cfg)
 
     loss_metrics = loss_fn(q_embs, k_embs, q_mask, k_mask)
 
-    assert not torch.isnan(loss_metrics["loss"]), "infoNCE loss is NaN"
+    assert not torch.isnan(loss_metrics["loss"]), "Pairwise CE loss is NaN"
     assert loss_metrics["loss"] >= 0
     assert loss_metrics["all_scores"].shape == (
         BATCH_SIZE,

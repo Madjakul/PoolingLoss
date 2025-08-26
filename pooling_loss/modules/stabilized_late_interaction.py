@@ -26,12 +26,11 @@ class StabilizedLateInteraction(torch.nn.Module):
     ) -> Float[torch.Tensor, "batch two_times_batch"]:
         query_embs = query_embs.unsqueeze(1)  # (B, 1, S, H)
         query_embs = F.normalize(query_embs, p=2, dim=-1)
+        q_lengths = q_mask.sum(dim=-1, keepdim=True).clamp(min=1).float()
         q_mask = q_mask.unsqueeze(1)  # (B, 1, S)
         key_embs = key_embs.unsqueeze(0)  # (1, 2B, S, H)
         key_embs = F.normalize(key_embs, p=2, dim=-1)
         k_mask = k_mask.unsqueeze(0)  # (1, 2B, S)
-
-        q_lengths = q_mask.sum(dim=-1, keepdim=True).clamp(min=1).float()
 
         # Compute token-level cosine similarities
         sim_matrix = torch.einsum("insh, mjth->ijst", query_embs, key_embs)

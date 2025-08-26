@@ -19,7 +19,9 @@ if TYPE_CHECKING:
 class BaseLoss(ABC, nn.Module):
 
     def __init__(self, cfg: "BaseConfig") -> None:
+        super().__init__()
         self.cfg = cfg
+
         assert self.cfg.model.pooling_method in [
             "mean",
             "li",
