@@ -43,5 +43,4 @@ class LateInteraction(torch.nn.Module):
         is_padding_mask = q_mask == 0
         masked_max_sim = max_sim_values.masked_fill(is_padding_mask, 0.0)
         scores = masked_max_sim.sum(dim=-1)  # (B, 2B)
-        scores = scores.clamp(-1.0, 1.0)  # because of fp32 rounding
         return scores
