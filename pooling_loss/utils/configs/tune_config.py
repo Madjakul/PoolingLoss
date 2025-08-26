@@ -8,15 +8,7 @@ from pooling_loss.utils.helpers import DictAccessMixin
 
 @dataclass
 class TuneConfig(DictAccessMixin):
-    loss: Literal[
-        "hard-margin",
-        "info-nce",
-        "margin",
-        "triplet",
-        "dynamic-info-nce",
-        "dynamic-margin",
-        "dynamic-triplet",
-    ] = "info-nce"
+    loss: Literal["info-nce", "triplet", "pairwise-ce"] = "info-nce"
     tau: Dict = field(default_factory=dict)
     margin: Optional[float] = None  # Only if margin-based lolss
     weighting: Optional[Literal["log", "sqrt", "none"]] = None

@@ -8,15 +8,7 @@ from pooling_loss.utils.helpers import DictAccessMixin
 
 @dataclass
 class TrainConfig(DictAccessMixin):
-    loss: Literal[
-        "hard-margin",
-        "info-nce",
-        "margin",
-        "triplet",
-        "dynamic-info-nce",
-        "dynamic-margin",
-        "dynamic-triplet",
-    ] = "info-nce"
+    loss: Literal["info-nce", "triplet", "pairwise-ce"] = "info-nce"
     tau: Optional[float] = None  # Only for CE losses
     margin: Optional[float] = None  # Only for triplet loss
     # --- optimizer ---
