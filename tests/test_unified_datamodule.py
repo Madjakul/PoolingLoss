@@ -1,16 +1,14 @@
 import os
 import tempfile
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
-import torch
 from datasets import Dataset
 from torch.utils.data._utils.collate import default_collate
 
 from pooling_loss.utils.configs.base_config import BaseConfig
 from pooling_loss.utils.data import UnifiedDatamodule
 from pooling_loss.utils.data.curriculum_batch_sampler import CurriculumBatchSampler
-from pooling_loss.utils.data.dynamic_pad_collator import DynamicPadCollator
 
 
 @pytest.fixture
