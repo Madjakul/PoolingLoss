@@ -38,15 +38,11 @@ class TripletLoss(BaseLoss):
             k_mask=k_mask,  # (2B, S)
         )
 
-        all_dists = 1 - all_scores
-
         targets = torch.arange(batch_size, device=query_embs.device)
         poss = all_scores[targets, targets]
-        pos_dists = all_dists[targets, targets]
         negs = all_scores[targets, targets + batch_size]
-        neg_dists = all_dists[targets, targets + batch_size]
 
-        loss = F.relu(pos_dists - neg_dists + self.margin).mean()  # type: ignore
+        loss = F.relu(negs - poss + self.margin).mean()  # type: ignore
 
         return {
             "all_scores": all_scores,
