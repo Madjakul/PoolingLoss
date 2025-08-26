@@ -10,6 +10,7 @@ from jaxtyping import Float, Int
 
 from pooling_loss.modules.dynamic_late_interaction import DynamicLateInteraction
 from pooling_loss.modules.late_interaction import LateInteraction
+from pooling_loss.modules.stabilized_late_interaction import StabilizedLateIntercation
 
 if TYPE_CHECKING:
     from pooling_loss.utils.configs import BaseConfig
@@ -20,16 +21,21 @@ class BaseLoss(ABC, nn.Module):
     def __init__(self, cfg: "BaseConfig") -> None:
         self.cfg = cfg
         assert self.cfg.model.pooling_method in [
-            "dli",
-            "li",
             "mean",
+            "li",
+            "average_li",
+            "mean_li",
+            "median_li",
+            "quantile_li",
         ], f"Invalid pooling method: {self.cfg.model.pooling_method}"
-        if self.cfg.model.pooling_method == "dli":
-            self.pool = DynamicLateInteraction(self.cfg)
+        if self.cfg.model.pooling_method == "mean":
+            self.pool = self.mean_pooling
         elif self.cfg.model.pooling_method == "li":
             self.pool = LateInteraction(self.cfg)
+        elif self.cfg.model.pooling_method == "average_li":
+            self.pool = StabilizedLateIntercation(self.cfg)
         else:
-            self.pool = self.mean_pooling
+            self.pool = DynamicLateInteraction(self.cfg)
 
     @abstractmethod
     def forward(self, *args, **kwargs):
