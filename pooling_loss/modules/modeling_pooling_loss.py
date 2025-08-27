@@ -112,7 +112,7 @@ class PoolingLoss(L.LightningModule):
         last_hidden_states = out.hidden_states[-1]
         return last_hidden_states
 
-    def training_step(self, batch, batch_idx: int) -> None:
+    def training_step(self, batch, batch_idx: int) -> Float[torch.Tensor, ""]:
         q_embs = self(
             input_ids=batch["input_ids"],
             attention_mask=batch["attention_mask"],
@@ -138,7 +138,24 @@ class PoolingLoss(L.LightningModule):
             q_mask=batch["attention_mask"],
             k_mask=k_mask,
         )
+        alignment_uniformity_metrics = self.alignment_uniformity_loss(
+            query_embs=q_embs,
+            key_embs=k_embs,
+            q_mask=batch["attention_mask"],
+            k_mask=k_mask,
+        )
 
+        self.log_dict(
+            {
+                "alignment_loss": alignment_uniformity_metrics["alignment_loss"],
+                "uniformity_loss": alignment_uniformity_metrics["uniformity_loss"],
+            },
+            prog_bar=True,
+            on_step=True,
+            on_epoch=False,
+            sync_dist=False,
+            batch_size=self.cfg.data.batch_size,
+        )
         self.log(
             "loss",
             loss_metrics["loss"],
@@ -148,6 +165,7 @@ class PoolingLoss(L.LightningModule):
             sync_dist=True,
             batch_size=self.cfg.data.batch_size,
         )
+        return loss_metrics["loss"]
 
     def on_validation_start(self):
         """Move validation metrics to correct device before validation."""
