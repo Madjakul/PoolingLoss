@@ -10,6 +10,10 @@ from jaxtyping import Float, Int
 
 class AlignmentUniformityLoss(nn.Module):
 
+    def __init__(self) -> None:
+        super().__init__()
+
+    @torch.inference_mode()
     def forward(
         self,
         query_embs: Float[torch.Tensor, "batch seq hidden"],

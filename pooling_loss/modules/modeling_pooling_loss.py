@@ -1,12 +1,10 @@
 # pooling_loss/modules/modeling_pooling_loss.py
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict
 
 import lightning as L
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from jaxtyping import Float, Int
 from torcheval.metrics import BinaryAUROC, HitRate, ReciprocalRank
 from transformers import (
@@ -18,7 +16,6 @@ from transformers import (
 
 from pooling_loss.modules.alignment_uniformity_loss import AlignmentUniformityLoss
 from pooling_loss.modules.info_nce_loss import InfoNCELoss
-from pooling_loss.modules.language_model import LanguageModel
 from pooling_loss.modules.pairwise_ce_loss import PairwiseCELoss
 from pooling_loss.modules.triplet_loss import TripletLoss
 
@@ -69,6 +66,7 @@ class PoolingLoss(L.LightningModule):
         self.vocab_size = self.model.config.vocab_size
 
         self.contrastive_loss = self.loss_map[cfg.execution.loss](cfg)
+        self.alignment_uniformity_loss = AlignmentUniformityLoss()
 
     def configure_optimizers(self) -> Dict[str, Any]:  # type: ignore[override]
         logging.info(
@@ -80,8 +78,6 @@ class PoolingLoss(L.LightningModule):
             self.parameters(),
             lr=self.cfg.execution.lr,  # type: ignore
             weight_decay=self.cfg.execution.weight_decay,  # type: ignore
-            betas=self.cfg.execution.betas,  # type: ignore
-            eps=self.cfg.execution.eps,  # type: ignore
         )
         # Calculate steps dynamically
         total_steps = int(self.trainer.estimated_stepping_batches)
@@ -116,7 +112,7 @@ class PoolingLoss(L.LightningModule):
         last_hidden_states = out.hidden_states[-1]
         return last_hidden_states
 
-    def training_step(self, batch, batch_idx: int) -> Float[torch.Tensor, ""]:
+    def training_step(self, batch, batch_idx: int) -> None:
         q_embs = self(
             input_ids=batch["input_ids"],
             attention_mask=batch["attention_mask"],
@@ -143,27 +139,15 @@ class PoolingLoss(L.LightningModule):
             k_mask=k_mask,
         )
 
-        metrics = {
-            "all_scores": loss_metrics["all_scores"],
-            "targets": loss_metrics["targets"],
-            "poss": loss_metrics["poss"],
-            "negs": loss_metrics["negs"],
-            "loss": loss_metrics["loss"],
-        }
-
-        self.log_dict(
-            {
-                "train_total_loss": metrics["total_loss"],
-                "train_lm_loss": metrics["lm_loss"],
-                "train_contrastive_loss": metrics["contrastive_loss"],
-            },
+        self.log(
+            "loss",
+            loss_metrics["loss"],
             prog_bar=True,
             on_step=True,
             on_epoch=True,
             sync_dist=True,
             batch_size=self.cfg.data.batch_size,
         )
-        return metrics["total_loss"]
 
     def on_validation_start(self):
         """Move validation metrics to correct device before validation."""
@@ -199,18 +183,17 @@ class PoolingLoss(L.LightningModule):
             q_mask=batch["attention_mask"],
             k_mask=k_mask,
         )
+        alignment_uniformity_metrics = self.alignment_uniformity_loss(
+            query_embs=q_embs,
+            key_embs=k_embs,
+            q_mask=batch["attention_mask"],
+            k_mask=k_mask,
+        )
 
-        metrics = {
-            "all_scores": loss_metrics["all_scores"],
-            "targets": loss_metrics["targets"],
-            "poss": loss_metrics["poss"],
-            "negs": loss_metrics["negs"],
-            "loss": loss_metrics["loss"],
-        }
-        all_scores = metrics["all_scores"]
-        targets = metrics["targets"]
-        poss = metrics["poss"]
-        negs = metrics["negs"]
+        all_scores = loss_metrics["all_scores"]
+        targets = loss_metrics["targets"]
+        poss = loss_metrics["poss"]
+        negs = loss_metrics["negs"]
         batch_size = targets.size(0)
         binary_scores = torch.cat([poss, negs], dim=0)
         labels = torch.cat(
@@ -225,9 +208,8 @@ class PoolingLoss(L.LightningModule):
 
         self.log_dict(
             {
-                "val_total_loss": metrics["total_loss"],
-                "val_lm_loss": metrics["lm_loss"],
-                "val_contrastive_loss": metrics["contrastive_loss"],
+                "alignment_loss": alignment_uniformity_metrics["alignment_loss"],
+                "uniformity_loss": alignment_uniformity_metrics["uniformity_loss"],
             },
             prog_bar=True,
             on_step=False,
@@ -296,18 +278,17 @@ class PoolingLoss(L.LightningModule):
             q_mask=batch["attention_mask"],
             k_mask=k_mask,
         )
+        alignment_uniformity_metrics = self.alignment_uniformity_loss(
+            query_embs=q_embs,
+            key_embs=k_embs,
+            q_mask=batch["attention_mask"],
+            k_mask=k_mask,
+        )
 
-        metrics = {
-            "all_scores": loss_metrics["all_scores"],
-            "targets": loss_metrics["targets"],
-            "poss": loss_metrics["poss"],
-            "negs": loss_metrics["negs"],
-            "loss": loss_metrics["loss"],
-        }
-        all_scores = metrics["all_scores"]
-        targets = metrics["targets"]
-        poss = metrics["poss"]
-        negs = metrics["negs"]
+        all_scores = loss_metrics["all_scores"]
+        targets = loss_metrics["targets"]
+        poss = loss_metrics["poss"]
+        negs = loss_metrics["negs"]
         batch_size = targets.size(0)
         binary_scores = torch.cat([poss, negs], dim=0)
         labels = torch.cat(
@@ -322,9 +303,8 @@ class PoolingLoss(L.LightningModule):
 
         self.log_dict(
             {
-                "test_total_loss": metrics["total_loss"],
-                "test_lm_loss": metrics["lm_loss"],
-                "test_contrastive_loss": metrics["contrastive_loss"],
+                "alignment_loss": alignment_uniformity_metrics["alignment_loss"],
+                "uniformity_loss": alignment_uniformity_metrics["uniformity_loss"],
             },
             prog_bar=True,
             on_step=False,
