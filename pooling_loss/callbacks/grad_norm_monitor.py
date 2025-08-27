@@ -31,13 +31,13 @@ class GradNormMonitor(Callback):
             return
 
         # Calculate the average sequence length for the current batch
-        query_lengths = batch["q_mask"].sum(dim=1)
+        query_lengths = batch["attention_mask"].sum(dim=1)
         avg_length = query_lengths.float().mean().item()
 
         # Log both metrics together for the same step
         # This ensures they are associated correctly in W&B or a CSV file
         metrics = {"gradient_norm": self.last_grad_norm, "avg_query_length": avg_length}
-        pl_module.log_dict(metrics, on_step=True, on_epoch=False)
+        pl_module.log_dict(metrics, on_step=True, on_epoch=False, sync_dist=False)
 
         # Reset for the next step
         self.last_grad_norm = None
