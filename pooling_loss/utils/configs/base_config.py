@@ -19,8 +19,6 @@ class BaseConfig(DictAccessMixin):
     mode: Literal["train", "tune"] = "train"
     project_name: str = "pooling-loss"
     group_name: Optional[str] = None
-    do_train: bool = True
-    do_test: bool = False
     _execution_config: Optional[Union[TrainConfig, TuneConfig]] = None
 
     data: DataConfig = DataConfig()

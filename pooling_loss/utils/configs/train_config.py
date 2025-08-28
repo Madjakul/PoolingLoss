@@ -34,4 +34,4 @@ class TrainConfig(DictAccessMixin):
     # --- wandb ---
     use_wandb: bool = True
     log_model: bool = True
-    watch: Literal["gradients", "parameters", "all", "none"] = "gradients"
+    watch: Literal["parameters", "gradients", "all", "none"] = "gradients"

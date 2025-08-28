@@ -22,14 +22,14 @@ class UnifiedDatamodule(L.LightningDataModule):
         self,
         cfg: "BaseConfig",
         individual_processed_paths: List[str],
-        unified_processed_path: str,
+        processed_ds_path: str,
         num_proc: int,
         cache_dir: Optional[str] = None,
     ) -> None:
         super().__init__()
         self.cfg = cfg
         self.individual_paths = individual_processed_paths
-        self.unified_processed_path = unified_processed_path
+        self.processed_ds_path = processed_ds_path
         self.num_proc = num_proc
         self.cache_dir = cache_dir
         self.tokenizer = get_tokenizer(cfg.data.tokenizer_name)
@@ -44,13 +44,11 @@ class UnifiedDatamodule(L.LightningDataModule):
             self.test_setup()
 
     def fit_setup(self) -> None:
-        train_path = osp.join(self.unified_processed_path, "train")
-        val_path = osp.join(self.unified_processed_path, "val")
+        train_path = osp.join(self.processed_ds_path, "train")
+        val_path = osp.join(self.processed_ds_path, "val")
 
         if osp.exists(train_path) and osp.exists(val_path):
-            logging.info(
-                f"Loading processed data from disk: {self.unified_processed_path}"
-            )
+            logging.info(f"Loading processed data from disk: {self.processed_ds_path}")
             self.train_ds = datasets.load_from_disk(train_path)
             self.val_ds = datasets.load_from_disk(val_path)
             return
@@ -80,18 +78,16 @@ class UnifiedDatamodule(L.LightningDataModule):
         self.val_ds.set_format("torch")
 
         # --- Save the processed data to disk for future runs ---
-        logging.info(f"Saving processed data to disk: {self.unified_processed_path}")
-        os.makedirs(self.unified_processed_path, exist_ok=True)
+        logging.info(f"Saving processed data to disk: {self.processed_ds_path}")
+        os.makedirs(self.processed_ds_path, exist_ok=True)
         self.train_ds.save_to_disk(train_path)
         self.val_ds.save_to_disk(val_path)
 
     def test_setup(self) -> None:
-        test_path = osp.join(self.unified_processed_path, "test")
+        test_path = osp.join(self.processed_ds_path, "test")
 
         if osp.exists(test_path):
-            logging.info(
-                f"Loading processed data from disk: {self.unified_processed_path}"
-            )
+            logging.info(f"Loading processed data from disk: {self.processed_ds_path}")
             self.test_ds = datasets.load_from_disk(test_path)
             return
 
@@ -111,14 +107,14 @@ class UnifiedDatamodule(L.LightningDataModule):
         self.test_ds.set_format("torch")
 
         # --- Save the processed data to disk for future runs ---
-        logging.info(f"Saving processed data to disk: {self.unified_processed_path}")
-        os.makedirs(self.unified_processed_path, exist_ok=True)
+        logging.info(f"Saving processed data to disk: {self.processed_ds_path}")
+        os.makedirs(self.processed_ds_path, exist_ok=True)
         self.test_ds.save_to_disk(test_path)
 
     def train_dataloader(self) -> DataLoader:
         if self.cfg.mode == "tune":
-            logging.info(f"Using a 5% subset of Unified for tuning.")
-            num_samples = int(len(self.train_ds) * 0.0025)
+            logging.info(f"Using a 4% subset of Unified for tuning.")
+            num_samples = int(len(self.train_ds) * 0.002)
             head = self.train_ds.select(range(num_samples))  # type: ignore
             tail = self.train_ds.select(reversed(range(num_samples)))  # type: ignore
             train_ds = datasets.concatenate_datasets([head, tail]).sort("length")
@@ -153,12 +149,21 @@ class UnifiedDatamodule(L.LightningDataModule):
             )
 
     def val_dataloader(self) -> DataLoader:
+        if self.cfg.mode == "tune":
+            logging.info(f"Using a 20% subset of Unified for tuning validation.")
+            num_samples = int(len(self.val_ds) * 0.1)
+            head = self.val_ds.select(range(num_samples))  # type: ignore
+            tail = self.val_ds.select(reversed(range(num_samples)))  # type: ignore
+            val_ds = datasets.concatenate_datasets([head, tail]).sort("length")
+        else:
+            val_ds = self.val_ds
+
         collator = None
         if self.cfg.data.padding is False:
             collator = DynamicPadCollator(pad_token_id=self.tokenizer.pad_token_id)
 
         return DataLoader(
-            self.val_ds,  # type: ignore
+            val_ds,  # type: ignore
             batch_size=self.cfg.data.batch_size,
             num_workers=self.num_proc,
             collate_fn=collator,

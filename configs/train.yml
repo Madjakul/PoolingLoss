@@ -1,0 +1,50 @@
+# train.yml
+
+mode: "train"
+project_name: "pooling-loss"
+group_name: "train-poolingloss-512-curriculum"
+
+data:
+  ds_name: "all" # allnli, msmarco, booksum, all
+  batch_size: 24
+  tokenizer_name: "FacebookAI/roberta-base"
+  max_length: 512
+  padding: false # max_length
+  map_batch_size: 1000
+  load_from_cache_file: false
+  shuffle: false # Set to false to get "curriculum learning" on unified data
+
+model:
+  base_model_name: "FacebookAI/roberta-base"
+  is_decoder_model: false
+  pooling_method: "mean"
+  q: null # Only if quantile_li
+
+train:
+  loss: "info-nce" # info-nce, triplet, pairwise-ce
+  tau: 0.07 # Only for CE losses
+  margin: null # Only for triplet loss
+  # --- optimizer ---
+  lr: 1e-5
+  weight_decay: 0.01
+  # --- checkpointing ---
+  checkpoint_metric: "val_mrr"
+  checkpoint_mode: "max"
+  save_top_k: 2
+  # --- trainer ---
+  device: "gpu"
+  num_devices: 3
+  strategy: "ddp_find_unused_parameters_true"
+  process_group_backend: "gloo"
+  max_steps: -1
+  max_epochs: 2
+  val_check_interval: 0.25
+  check_val_every_n_epoch: null
+  log_every_n_steps: 10
+  accumulate_grad_batches: 1
+  gradient_clip_val: null
+  precision: "32" # 16-mixed
+  # --- wandb ---
+  use_wandb: true
+  log_model: true
+  watch: "gradients" # parameters, gradients, all, none
