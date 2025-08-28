@@ -15,6 +15,8 @@ class TrainConfig(DictAccessMixin):
     lr: float = 1e-5
     weight_decay: float = 0.01
     # --- checkpointing ---
+    checkpoint_metric: Literal["val_auroc", "val_mrr"] = "val_mrr"
+    checkpoint_mode: Literal["min", "max"] = "max"
     save_top_k: int = 2
     # --- trainer ---
     device: Literal["cpu", "gpu"] = "gpu"

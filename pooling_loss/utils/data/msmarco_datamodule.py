@@ -22,6 +22,7 @@ class MSMarcoDatamodule(L.LightningDataModule):
         processed_ds_path: str,
         num_proc: int,
         cache_dir: Optional[str] = None,
+        **kwargs,
     ) -> None:
         super().__init__()
         self.cfg = cfg

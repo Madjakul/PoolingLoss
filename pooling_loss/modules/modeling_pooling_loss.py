@@ -147,8 +147,10 @@ class PoolingLoss(L.LightningModule):
 
         self.log_dict(
             {
-                "alignment_loss": alignment_uniformity_metrics["alignment_loss"],
-                "uniformity_loss": alignment_uniformity_metrics["uniformity_loss"],
+                "train_alignment_loss": alignment_uniformity_metrics["alignment_loss"],
+                "train_uniformity_loss": alignment_uniformity_metrics[
+                    "uniformity_loss"
+                ],
             },
             prog_bar=True,
             on_step=True,
@@ -226,8 +228,8 @@ class PoolingLoss(L.LightningModule):
 
         self.log_dict(
             {
-                "alignment_loss": alignment_uniformity_metrics["alignment_loss"],
-                "uniformity_loss": alignment_uniformity_metrics["uniformity_loss"],
+                "val_alignment_loss": alignment_uniformity_metrics["alignment_loss"],
+                "val_uniformity_loss": alignment_uniformity_metrics["uniformity_loss"],
             },
             prog_bar=True,
             on_step=False,
@@ -321,8 +323,8 @@ class PoolingLoss(L.LightningModule):
 
         self.log_dict(
             {
-                "alignment_loss": alignment_uniformity_metrics["alignment_loss"],
-                "uniformity_loss": alignment_uniformity_metrics["uniformity_loss"],
+                "test_alignment_loss": alignment_uniformity_metrics["alignment_loss"],
+                "test_uniformity_loss": alignment_uniformity_metrics["uniformity_loss"],
             },
             prog_bar=True,
             on_step=False,

@@ -33,5 +33,7 @@ class TuneConfig(DictAccessMixin):
     time_budget_s: int = 151200
     max_t: int = 2
     grace_period = 1
+    val_check_interval: Optional[float] = None
     # --- wandb ---
     use_wandb: bool = True
+    watch: str = "none"
