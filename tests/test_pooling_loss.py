@@ -64,7 +64,7 @@ def test_forward(cfg, batch):
     assert last_hidden_states.shape == (
         cfg.data.batch_size,
         cfg.data.max_length,
-        model.hidden_size,
+        model.lm.hidden_size,
     )
 
 
@@ -79,8 +79,8 @@ def test_training_step(mock_log_dict, cfg, batch):
     assert not torch.isnan(loss)
     mock_log_dict.assert_called()
     logged_data = mock_log_dict.call_args[0][0]
-    assert "alignment_loss" in logged_data
-    assert "uniformity_loss" in logged_data
+    assert "train_alignment_loss" in logged_data
+    assert "train_uniformity_loss" in logged_data
 
 
 @patch("pooling_loss.modules.modeling_pooling_loss.PoolingLoss.log_dict")

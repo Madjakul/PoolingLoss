@@ -25,16 +25,16 @@ class TrainArgparse:
             help="Path to the config file.",
         )
         parser.add_argument(
-            "--processed_ds_path",
-            type=str,
-            required=True,
-            help="Path to save/load the prprocessed dataset.",
-        )
-        parser.add_argument(
             "--logs_dir",
             type=str,
             required=True,
             help="Directory where the logs are stored.",
+        )
+        parser.add_argument(
+            "--processed_ds_path",
+            type=str,
+            required=True,
+            help="Path to save/load the prprocessed dataset.",
         )
         parser.add_argument(
             "--individual_processed_paths",

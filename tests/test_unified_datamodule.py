@@ -48,7 +48,7 @@ def unified_datamodule(mock_config, small_dataset):
         dm = UnifiedDatamodule(
             cfg=mock_config,
             individual_processed_paths=[tmpdir],
-            unified_processed_path=os.path.join(tmpdir, "unified"),
+            processed_ds_path=os.path.join(tmpdir, "unified"),
             num_proc=1,
             cache_dir=None,
         )

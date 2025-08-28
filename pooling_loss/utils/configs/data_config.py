@@ -8,7 +8,7 @@ from pooling_loss.utils.helpers import DictAccessMixin
 
 @dataclass
 class DataConfig(DictAccessMixin):
-    ds_name: Literal["allnli", "msmarco", "booksum", "unified"] = "allnli"
+    ds_name: Literal["allnli", "msmarco", "booksum", "all"] = "allnli"
     batch_size: int = 32
     tokenizer_name: str = "FacebookAI/roberta-base"
     max_length: int = 512

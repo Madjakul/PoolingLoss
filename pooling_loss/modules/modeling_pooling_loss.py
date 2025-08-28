@@ -7,15 +7,11 @@ import lightning as L
 import torch
 from jaxtyping import Float, Int
 from torcheval.metrics import BinaryAUROC, HitRate, ReciprocalRank
-from transformers import (
-    AutoConfig,
-    AutoModelForCausalLM,
-    AutoModelForMaskedLM,
-    get_constant_schedule_with_warmup,
-)
+from transformers import get_constant_schedule_with_warmup
 
 from pooling_loss.modules.alignment_uniformity_loss import AlignmentUniformityLoss
 from pooling_loss.modules.info_nce_loss import InfoNCELoss
+from pooling_loss.modules.language_model import LanguageModel
 from pooling_loss.modules.pairwise_ce_loss import PairwiseCELoss
 from pooling_loss.modules.triplet_loss import TripletLoss
 
@@ -46,25 +42,7 @@ class PoolingLoss(L.LightningModule):
         self.save_hyperparameters()
         self.cfg = cfg
 
-        config = AutoConfig.from_pretrained(self.cfg.model.base_model_name)
-
-        if self.cfg.model.is_decoder_model:
-            logging.info(
-                f"Loading pretrained decoder from {self.cfg.model.base_model_name}."
-            )
-            self.model = AutoModelForCausalLM.from_pretrained(
-                self.cfg.model.base_model_name, config=config
-            )
-        else:
-            logging.info(
-                f"Loading pretrained encoder from {self.cfg.model.base_model_name}."
-            )
-            self.model = AutoModelForMaskedLM.from_pretrained(
-                self.cfg.model.base_model_name, config=config
-            )
-        self.hidden_size = self.model.config.hidden_size
-        self.vocab_size = self.model.config.vocab_size
-
+        self.lm = LanguageModel(cfg)
         self.contrastive_loss = self.loss_map[cfg.execution.loss](cfg)
         self.alignment_uniformity_loss = AlignmentUniformityLoss()
 
@@ -103,14 +81,11 @@ class PoolingLoss(L.LightningModule):
         input_ids: Int[torch.Tensor, "batch seq"],
         attention_mask: Int[torch.Tensor, "batch seq"],
     ) -> Float[torch.Tensor, "batch seq hidden"]:
-        out = self.model(
-            input_ids,
+        out = self.lm(
+            input_ids=input_ids,
             attention_mask=attention_mask,
-            output_hidden_states=True,
-            return_dict=True,
         )
-        last_hidden_states = out.hidden_states[-1]
-        return last_hidden_states
+        return out
 
     def training_step(self, batch, batch_idx: int) -> Float[torch.Tensor, ""]:
         q_embs = self(
