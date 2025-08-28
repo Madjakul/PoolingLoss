@@ -150,8 +150,8 @@ class AllNLIDatamodule(L.LightningDataModule):
 
     def train_dataloader(self) -> DataLoader:
         if self.cfg.mode == "tune":
-            logging.info(f"Using a 2% subset of AllNLI for tuning.")
-            num_samples = int(len(self.train_ds) * 0.01)
+            logging.info(f"Using a 10% subset of AllNLI for tuning.")
+            num_samples = int(len(self.train_ds) * 0.05)
             head = self.train_ds.select(range(num_samples))  # type: ignore
             tail = self.train_ds.select(reversed(range(num_samples)))  # type: ignore
             train_ds = datasets.concatenate_datasets([head, tail]).sort("length")
