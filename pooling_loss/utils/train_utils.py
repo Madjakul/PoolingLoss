@@ -168,7 +168,7 @@ def train_tune(
         devices=cfg.tune.num_devices_per_trial,
         max_steps=cfg.tune.max_steps,
         max_epochs=cfg.tune.max_epochs,
-        val_check_interval=None,
+        val_check_interval=cfg.tune.val_check_interval,
         callbacks=callbacks,
         enable_checkpointing=False,
         logger=loggers,
