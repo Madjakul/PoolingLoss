@@ -82,6 +82,7 @@ def setup_trainer(
             name=name,
             log_model=cfg.train.log_model,
             group=cfg.group_name,
+            config=cfg.to_dict(),
         )
         wandb_logger.watch(
             model=model,
