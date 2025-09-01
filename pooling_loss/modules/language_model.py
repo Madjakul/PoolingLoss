@@ -1,7 +1,7 @@
 # pooling_loss/modules/language_model.py
 
 import logging
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING
 
 import torch
 import torch.nn as nn
@@ -21,13 +21,8 @@ class LanguageModel(nn.Module):
 
         config = AutoConfig.from_pretrained(self.cfg.model.base_model_name)
 
-        if self.disable_pe:
-            logging.info("Disabling position embeddings.")
-            config.position_embedding_type = None
-
         if self.cfg.model.disable_pe:
             logging.info("Disabling position embeddings.")
-            config.position_embedding_type = None
 
         if self.cfg.model.is_decoder_model:
             logging.info(
@@ -51,8 +46,8 @@ class LanguageModel(nn.Module):
         self,
         input_ids: Int[torch.Tensor, "batch seq"],
         attention_mask: Int[torch.Tensor, "batch seq"],
-    ) -> Tuple[Float[torch.Tensor, ""], Float[torch.Tensor, "batch seq hidden"]]:
-        if self.disable_pe:
+    ) -> Float[torch.Tensor, "batch seq hidden"]:
+        if self.cfg.model.disable_pe:
             position_ids = torch.zeros_like(input_ids)
             out = self.model(
                 input_ids,
