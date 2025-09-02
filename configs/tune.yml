@@ -18,7 +18,7 @@ model:
   base_model_name: "FacebookAI/roberta-base"
   disable_pe: false
   is_decoder_model: false
-  pooling_method: "mean"
+  pooling_method: "li" # mean, li, average_li, mean_li, median_li, quantile_li
   q: null # Only if quantile_li
 
 tune:

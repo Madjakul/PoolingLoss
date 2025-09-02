@@ -1,6 +1,6 @@
 # pooling_loss/utils/configs/test_config.py
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Literal
 
 from pooling_loss.utils.helpers import DictAccessMixin
@@ -8,7 +8,7 @@ from pooling_loss.utils.helpers import DictAccessMixin
 
 @dataclass
 class TestConfig(DictAccessMixin):
-    tasks: List[str] = []
+    tasks: List[str] = field(default_factory=list)
     # --- trainer ---
     device: Literal["cpu", "gpu"] = "gpu"
     num_devices: int = 1
