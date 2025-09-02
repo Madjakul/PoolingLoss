@@ -1,8 +1,7 @@
 # pooling_loss/callbacks/__init__.py
 
-# TODO: add callback for PCA on positional embeddinfgs
-# TODO: add callback to track position embeddings weight changes
-
 from pooling_loss.callbacks.grad_norm_monitor import GradNormMonitor
+from pooling_loss.callbacks.pe_pca import PositionalEmbbeddingPCA
+from pooling_loss.callbacks.pe_tracker import PositionalEmbeddingTracker
 
-__all__ = ["GradNormMonitor"]
+__all__ = ["GradNormMonitor", "PoisitionalEmbeddingTracker", "PositionalEmbbeddingPCA"]
