@@ -39,8 +39,25 @@ class LanguageModel(nn.Module):
                 self.cfg.model.base_model_name, config=config
             )
 
+        if self.cfg.model.freeze_pe:
+            self._freeze_pe()
+
         self.hidden_size = self.model.config.hidden_size
         self.vocab_size = self.model.config.vocab_size
+
+    def _freeze_pe(self) -> None:
+        # Freeze positional embeddings if specified
+        if hasattr(self.model, "roberta") and hasattr(
+            self.model.roberta.embeddings, "position_embeddings"
+        ):
+            self.model.roberta.embeddings.position_embeddings.weight.requires_grad = (
+                False
+            )
+            logging.info("Froze RoBERTa positional embeddings.")
+        else:
+            logging.info(
+                "No absolute positional embeddings to freeze (likely RoPE/relative)."
+            )
 
     def forward(
         self,

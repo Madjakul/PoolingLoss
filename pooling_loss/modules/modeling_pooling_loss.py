@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
 class PoolingLoss(L.LightningModule):
 
+    # TODO: add an option to train with frozen positional embeddings
     loss_map = {
         "info-nce": InfoNCELoss,
         "triplet": TripletLoss,

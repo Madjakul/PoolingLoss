@@ -10,6 +10,7 @@ from pooling_loss.utils.helpers import DictAccessMixin
 class ModelConfig(DictAccessMixin):
     base_model_name: str = "FacebookAI/roberta-base"
     disable_pe: bool = False
+    freeze_pe: bool = False  # only during training
     is_decoder_model: bool = False
     pooling_method: Literal[
         "mean", "li", "average_li", "mean_li", "median_li", "quantile_li"
