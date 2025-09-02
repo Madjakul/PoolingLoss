@@ -66,7 +66,9 @@ class DynamicLateInteraction(torch.nn.Module):
             doc_stats = torch.nanmean(flattened_sim, dim=-1)
 
         # Scale by query length to get expected scores
+        # Make sure to detach so the model does not game the distributions
         expected_scores = (doc_stats * query_lengths) + self.EPS  # (B, 2B)
+        expected_scores = expected_scores.detach()
 
         # Max-based interaction
         masked_sim = sim_matrix.masked_fill(~valid_mask, self.IGNORE)  # type: ignore

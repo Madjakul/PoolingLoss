@@ -2,7 +2,7 @@
 
 mode: "train"
 project_name: "pooling-loss"
-group_name: "train-poolingloss-512-curriculum"
+group_name: "train-poolingloss-512-all"
 
 data:
   ds_name: "all" # allnli, msmarco, booksum, all
