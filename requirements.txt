@@ -6,6 +6,7 @@ hyperopt==0.2.7
 jaxtyping==0.3.2
 lightning==2.5.0.post0
 matplotlib==3.10.1
+mteb==1.38.50
 numpy==2.2.3
 psutil==7.0.0
 PyQt6==6.8.1

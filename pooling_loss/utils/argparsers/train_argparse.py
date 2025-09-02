@@ -8,13 +8,6 @@ class TrainArgparse:
 
     @classmethod
     def parse_known_args(cls):
-        """Parses arguments.
-
-        Returns
-        -------
-        args: Any
-            Parsed arguments.
-        """
         parser = argparse.ArgumentParser(
             description="Arguments used to train/fine-tune a model."
         )

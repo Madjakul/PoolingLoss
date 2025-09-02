@@ -9,6 +9,7 @@ import yaml
 
 from pooling_loss.utils.configs.data_config import DataConfig
 from pooling_loss.utils.configs.model_config import ModelConfig
+from pooling_loss.utils.configs.test_config import TestConfig
 from pooling_loss.utils.configs.train_config import TrainConfig
 from pooling_loss.utils.configs.tune_config import TuneConfig
 from pooling_loss.utils.helpers import DictAccessMixin
@@ -16,7 +17,7 @@ from pooling_loss.utils.helpers import DictAccessMixin
 
 @dataclass
 class BaseConfig(DictAccessMixin):
-    mode: Literal["train", "tune"] = "train"
+    mode: Literal["train", "tune", "test"] = "train"
     project_name: str = "pooling-loss"
     group_name: Optional[str] = None
     _execution_config: Optional[Union[TrainConfig, TuneConfig]] = None
@@ -25,6 +26,7 @@ class BaseConfig(DictAccessMixin):
     model: ModelConfig = ModelConfig()
     _train: TrainConfig = TrainConfig()
     _tune: TuneConfig = TuneConfig()
+    _test: TestConfig = TestConfig()
 
     def __post_init__(self) -> None:
         if self._execution_config is None:
@@ -36,6 +38,8 @@ class BaseConfig(DictAccessMixin):
             self._execution_config = self._train
         elif self.mode == "tune":
             self._execution_config = self._tune
+        elif self.mode == "test":
+            self._execution_config = self._test
         else:
             raise ValueError(f"Unknown mode: {self.mode}")
 
@@ -47,6 +51,15 @@ class BaseConfig(DictAccessMixin):
                 "Cannot access training configuration when mode is not 'train'."
             )
         return self._train
+
+    @property
+    def test(self) -> TestConfig:
+        """Access the testing configuration."""
+        if self.mode != "test":
+            raise ValueError(
+                "Cannot access testing configuration when mode is not 'test'."
+            )
+        return self._test
 
     @property
     def tune(self) -> TuneConfig:
