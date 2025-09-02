@@ -2,7 +2,7 @@
 
 mode: "tune"
 project_name: "pooling-loss"
-group_name: "tune-poolingloss-512-infonce"
+group_name: "tune-poolingloss-512-pairwisece"
 
 data:
   ds_name: "all" # allnli, msmarco, booksum, all
@@ -21,7 +21,7 @@ model:
   q: null # Only if quantile_li
 
 tune:
-  loss: "info-nce" # info-nce, triplet, pairwise-ce
+  loss: "pairwise-ce" # info-nce, triplet, pairwise-ce
   tau: # Only from CE losses
     # null
     type: choice
