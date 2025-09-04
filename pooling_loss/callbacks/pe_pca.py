@@ -43,7 +43,7 @@ class PositionalEmbeddingPCA(Callback):
         try:
             # Keep the tensor on the same device as the model (GPU)
             positional_embeddings = (
-                pl_module.lm.model.model.roberta.embeddings.position_embeddings.weight.clone().detach()
+                pl_module.lm.model.roberta.embeddings.position_embeddings.weight.clone().detach()
             )
 
             # --- Perform PCA on GPU ---

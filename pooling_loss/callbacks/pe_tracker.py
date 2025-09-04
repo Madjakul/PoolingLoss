@@ -13,7 +13,7 @@ class PositionalEmbeddingTracker(Callback):
 
     def __init__(self):
         super().__init__()
-        self.initial_position_al_embeddings = None
+        self.initial_positional_embeddings = None
 
     def on_train_start(self, trainer: L.Trainer, pl_module: L.LightningModule) -> None:
         """Called when the train begins."""
