@@ -27,7 +27,7 @@ class GradNormMonitor(Callback):
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx):
         """After the training step, log the gradient norm and the average
         sequence length."""
-        if self.last_grad_norm is None:
+        if self.last_grad_norm is None or not batch:
             return
 
         # Calculate the average sequence length for the current batch
