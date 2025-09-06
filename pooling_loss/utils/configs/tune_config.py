@@ -25,6 +25,7 @@ class TuneConfig(DictAccessMixin):
     gradient_clip_val: Optional[float] = None
     precision: Literal["32", "16-mixed"] = "16-mixed"
     # --- tuner ---
+    gather: bool = False
     metric: Literal["val_auroc", "val_mrr"] = "val_auroc"
     mode: Literal["min", "max"] = "max"
     num_samples: int = 30

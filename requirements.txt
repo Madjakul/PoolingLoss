@@ -1,6 +1,7 @@
 accelerate==1.6.0
 datasets==3.3.2
 filelock==3.13.1
+GradCache==0.1.0
 huggingface-hub==0.29.2
 hyperopt==0.2.7
 jaxtyping==0.3.2

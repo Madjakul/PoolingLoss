@@ -5,9 +5,9 @@ DATA_ROOT=$PROJECT_ROOT/data                     # Do not modify
 
 # ************************** Customizable Arguments ************************************
 
-CONFIG_PATH=$PROJECT_ROOT/configs/tune.yml
+CONFIG_PATH=$PROJECT_ROOT/configs/train.yml
 LOGS_DIR=$PROJECT_ROOT/logs
-PROCESSED_DS_PATH=/scratch/$USER/Datasets/pooling-loss/facebookai-roberta-base/no-padding
+PROCESSED_DS_PATH=/scratch/$USER/Datasets/pooling-loss/facebookai-roberta-base/padding
 
 # --------------------------------------------------------------------------------------
 
@@ -17,7 +17,7 @@ PROCESSED_DS_PATH=/scratch/$USER/Datasets/pooling-loss/facebookai-roberta-base/n
 #     "/scratch/$USER/Datasets/booksum/facebookai-roberta-base/no-padding"
 # )
 # CACHE_DIR=$PROJECT_ROOT/../cache/
-NUM_PROC=32
+NUM_PROC=30
 #
 
 # **************************************************************************************
@@ -25,7 +25,7 @@ NUM_PROC=32
 mkdir -p "$LOGS_DIR" || true
 mkdir -p "$PROJECT_ROOT/tmp/" || true
 
-if [[ "$SLURM" == "true" ]]; then
+if [[ $SLURM_JOB_ID != "" ]]; then
     echo "SLURM_JOB_ID: $SLURM_JOB_ID"
     echo "SLURM_JOB_NODELIST: $SLURM_JOB_NODELIST"
     echo "SLURM_NNODES: $SLURM_NNODES"
@@ -36,7 +36,7 @@ if [[ "$SLURM" == "true" ]]; then
 
     torchrun \
         --standalone \
-        --nnodes=1 \
+        --nnodes=$SLURM_NNODES \
         --nproc_per_node=$SLURM_GPUS_ON_NODE \
         "$PROJECT_ROOT/train.py" \
         --config_path "$CONFIG_PATH" \
@@ -67,3 +67,4 @@ else
     fi
 
     "${cmd[@]}"
+fi

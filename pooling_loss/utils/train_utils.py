@@ -10,7 +10,11 @@ from lightning.pytorch.loggers import CSVLogger, WandbLogger
 from lightning.pytorch.strategies import DDPStrategy
 from ray.tune.integration.pytorch_lightning import TuneReportCheckpointCallback
 
-from pooling_loss.callbacks import GradNormMonitor
+from pooling_loss.callbacks import (
+    GradNormMonitor,
+    PositionalEmbeddingPCA,
+    PositionalEmbeddingTracker,
+)
 from pooling_loss.modules import PoolingLoss
 from pooling_loss.utils.configs.base_config import BaseConfig
 from pooling_loss.utils.data.allnli_datamodule import AllNLIDatamodule
@@ -52,15 +56,17 @@ def setup_trainer(
     # Set up callbacks
     callbacks = []
 
-    # Learning rate monitor
-    lr_monitor = LearningRateMonitor(logging_interval="step")
-    callbacks.append(lr_monitor)
-    callbacks.append(GradNormMonitor())
-
     name = (
         f"{cfg.model.base_model_name}-{cfg.data.ds_name}"
         f"-pooling:{cfg.model.pooling_method}-q:{cfg.model.q}-loss:{cfg.train.loss}"
     ).replace("/", "-")
+
+    # Learning rate monitor
+    lr_monitor = LearningRateMonitor(logging_interval="step")
+    callbacks.append(lr_monitor)
+    callbacks.append(GradNormMonitor())
+    callbacks.append(PositionalEmbeddingTracker())
+    callbacks.append(PositionalEmbeddingPCA(output_dir=osp.join(logs_dir, name)))
 
     # Model checkpoint callback if checkpoint_dir is provided
     if checkpoint_dir is not None:
@@ -120,6 +126,7 @@ def setup_trainer(
         accumulate_grad_batches=cfg.train.accumulate_grad_batches,
         gradient_clip_val=cfg.train.gradient_clip_val,
         precision=cfg.train.precision,
+        overfit_batches=cfg.train.overfit_batches,
     )
     return trainer
 

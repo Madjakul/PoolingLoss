@@ -10,6 +10,7 @@ from pooling_loss.utils.helpers import DictAccessMixin
 class TestConfig(DictAccessMixin):
     tasks: List[str] = field(default_factory=list)
     # --- trainer ---
+    gather: bool = False
     device: Literal["cpu", "gpu"] = "gpu"
     num_devices: int = 1
     process_group_backend: Literal["nccl", "gloo", "mpi"] = "gloo"

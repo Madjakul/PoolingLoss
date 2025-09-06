@@ -19,6 +19,7 @@ class TrainConfig(DictAccessMixin):
     checkpoint_mode: Literal["min", "max"] = "max"
     save_top_k: int = 2
     # --- trainer ---
+    gather: bool = True
     device: Literal["cpu", "gpu"] = "gpu"
     num_devices: int = 1
     strategy: str = "ddp_find_unused_parameters_true"
@@ -28,9 +29,10 @@ class TrainConfig(DictAccessMixin):
     val_check_interval: Optional[float] = None
     check_val_every_n_epoch: Optional[int] = None
     log_every_n_steps: int = 10
-    accumulate_grad_batches: int = 1
+    accumulate_grad_batches: int = 8
     gradient_clip_val: Optional[float] = None
     precision: Literal["32", "16-mixed"] = "32"
+    overfit_batches: float = 0.0
     # --- wandb ---
     use_wandb: bool = True
     log_model: bool = True
