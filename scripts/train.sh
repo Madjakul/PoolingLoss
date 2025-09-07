@@ -7,15 +7,15 @@ DATA_ROOT=$PROJECT_ROOT/data                     # Do not modify
 
 CONFIG_PATH=$PROJECT_ROOT/configs/train.yml
 LOGS_DIR=$PROJECT_ROOT/logs
-PROCESSED_DS_PATH=/scratch/$USER/Datasets/pooling-loss/facebookai-roberta-base/padding
+PROCESSED_DS_PATH=/scratch/$USER/Datasets/pooling-loss-v2/facebookai-roberta-base/padding
 
 # --------------------------------------------------------------------------------------
 
-# INDIVIDUAL_PROCESSED_PATHS=(
-#     "/scratch/$USER/Datasets/allnli/facebookai-roberta-base/no-padding"
-#     "/scratch/$USER/Datasets/msmarco/facebookai-roberta-base/no-padding"
-#     "/scratch/$USER/Datasets/booksum/facebookai-roberta-base/no-padding"
-# )
+INDIVIDUAL_PROCESSED_PATHS=(
+    "/scratch/$USER/Datasets/allnli/facebookai-roberta-base/padding"
+    "/scratch/$USER/Datasets/msmarco/facebookai-roberta-base/padding"
+    # "/scratch/$USER/Datasets/booksum/facebookai-roberta-base/no-padding"
+)
 # CACHE_DIR=$PROJECT_ROOT/../cache/
 NUM_PROC=30
 #
@@ -42,7 +42,7 @@ if [[ $SLURM_JOB_ID != "" ]]; then
         --config_path "$CONFIG_PATH" \
         --logs_dir "$LOGS_DIR" \
         --processed_ds_path "$PROCESSED_DS_PATH" \
-        ${INDIVIDUAL_PROCESSED_PATHS:+--individual_processed_paths "$INDIVIDUAL_PROCESSED_PATHS"} \
+        ${INDIVIDUAL_PROCESSED_PATHS:+--individual_processed_paths "${INDIVIDUAL_PROCESSED_PATHS[@]}"} \
         ${CACHE_DIR:+--cache_dir "$CACHE_DIR"} \
         ${CHECKPOINT_DIR:+--checkpoint_dir "$CHECKPOINT_DIR"} \
         ${NUM_PROC:+--num_proc "$NUM_PROC"}
@@ -54,7 +54,7 @@ else
         --processed_ds_path "$PROCESSED_DS_PATH")
 
     if [[ -v INDIVIDUAL_PROCESSED_PATHS ]]; then
-        cmd+=(--individual_processed_paths "$INDIVIDUAL_PROCESSED_PATHS")
+        cmd+=(--individual_processed_paths "${INDIVIDUAL_PROCESSED_PATHS[@]}")
     fi
 
     if [[ -v CACHE_DIR ]]; then

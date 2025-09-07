@@ -37,7 +37,8 @@ class TuneArgparse:
         )
         parser.add_argument(
             "--individual_processed_paths",
-            type=List[str],
+            nargs="+",  # Expect 1 or more arguments and gather them into a list
+            type=str,
             default=[],
             help=(
                 "List of paths to the individual processed datasets (for unified"

@@ -34,7 +34,7 @@ cmd=(python3 "$PROJECT_ROOT/tune.py"
     --processed_ds_path "$PROCESSED_DS_PATH")
 
 if [[ -v INDIVIDUAL_PROCESSED_PATHS ]]; then
-    cmd+=(--individual_processed_paths "$INDIVIDUAL_PROCESSED_PATHS")
+    cmd+=(--individual_processed_paths "${INDIVIDUAL_PROCESSED_PATHS[@]}")
 fi
 
 if [[ -v CACHE_DIR ]]; then
