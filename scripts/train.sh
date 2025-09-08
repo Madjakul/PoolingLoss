@@ -7,15 +7,15 @@ DATA_ROOT=$PROJECT_ROOT/data                     # Do not modify
 
 CONFIG_PATH=$PROJECT_ROOT/configs/train.yml
 LOGS_DIR=$PROJECT_ROOT/logs
-PROCESSED_DS_PATH=/scratch/$USER/Datasets/pooling-loss-v2/facebookai-roberta-base/padding
+PROCESSED_DS_PATH=/scratch/$USER/Datasets/allnli/facebookai-roberta-base/padding # /scratch/$USER/Datasets/pooling-loss-v2/facebookai-roberta-base/padding
 
 # --------------------------------------------------------------------------------------
 
-INDIVIDUAL_PROCESSED_PATHS=(
-    "/scratch/$USER/Datasets/allnli/facebookai-roberta-base/padding"
-    "/scratch/$USER/Datasets/msmarco/facebookai-roberta-base/padding"
-    # "/scratch/$USER/Datasets/booksum/facebookai-roberta-base/no-padding"
-)
+# INDIVIDUAL_PROCESSED_PATHS=(
+# "/scratch/$USER/Datasets/allnli/facebookai-roberta-base/padding"
+# "/scratch/$USER/Datasets/msmarco/facebookai-roberta-base/padding"
+# "/scratch/$USER/Datasets/booksum/facebookai-roberta-base/padding"
+# )
 # CACHE_DIR=$PROJECT_ROOT/../cache/
 NUM_PROC=30
 #
