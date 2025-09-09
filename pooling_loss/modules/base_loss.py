@@ -22,14 +22,7 @@ class BaseLoss(ABC, nn.Module):
         super().__init__()
         self.cfg = cfg
 
-        assert self.cfg.model.pooling_method in [
-            "mean",
-            "li",
-            "average_li",
-            "mean_li",
-            "median_li",
-            "quantile_li",
-        ], f"Invalid pooling method: {self.cfg.model.pooling_method}"
+        assert self.cfg.model.pooling_method in ["mean", "li", "average_li", "mean_li"]
         if self.cfg.model.pooling_method == "mean":
             self.pool = self.mean_pooling
         elif self.cfg.model.pooling_method == "li":

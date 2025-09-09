@@ -12,7 +12,6 @@ class ModelConfig(DictAccessMixin):
     disable_pe: bool = False
     freeze_pe: bool = False  # only during training
     is_decoder_model: bool = False
-    pooling_method: Literal[
-        "mean", "li", "average_li", "mean_li", "median_li", "quantile_li"
-    ] = "mean"
+    pooling_method: Literal["mean", "li", "average_li", "mean_li"] = "mean"
+    chunk_size: Optional[int] = 64  # Only for LI methods
     q: Optional[float] = None  # Only if quantile_li

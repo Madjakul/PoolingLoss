@@ -43,8 +43,6 @@ class PoolingLoss(L.LightningModule):
         self.lm = LanguageModel(cfg)
         self.contrastive_loss = self.loss_map[cfg.execution.loss](cfg)
         self.alignment_uniformity_loss = AlignmentUniformityLoss()
-        # All GradCache logic has been removed.
-        # Lightning's `accumulate_grad_batches` will now be used directly.
 
     def configure_optimizers(self) -> Dict[str, Any]:
         logging.info(

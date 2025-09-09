@@ -19,7 +19,7 @@ model:
   disable_pe: false
   freeze_pe: false
   is_decoder_model: false
-  pooling_method: "average_li" # mean, li, average_li, mean_li, median_li, quantile_li
+  pooling_method: "mean_li" # mean, li, average_li, mean_li
   q: null # Only if quantile_li
 
 train:
@@ -45,7 +45,7 @@ train:
   check_val_every_n_epoch: null
   log_every_n_steps: 1
   accumulate_grad_batches: 1
-  gradient_clip_val: null
+  gradient_clip_val: 1.0
   precision: "16-mixed" # 16-mixed, 32
   overfit_batches: 0.0
   # --- wandb ---

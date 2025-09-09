@@ -17,7 +17,7 @@ PROCESSED_DS_PATH=/scratch/$USER/Datasets/allnli/facebookai-roberta-base/padding
 # "/scratch/$USER/Datasets/booksum/facebookai-roberta-base/padding"
 # )
 # CACHE_DIR=$PROJECT_ROOT/../cache/
-NUM_PROC=30
+NUM_PROC=48
 #
 
 # **************************************************************************************
