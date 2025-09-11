@@ -1,3 +1,4 @@
+```yml
 # train.yml
 
 mode: "train"
@@ -19,14 +20,15 @@ model:
   disable_pe: false
   freeze_pe: false
   is_decoder_model: false
-  pooling_method: "mean" # mean, li, average_li, mean_li
+  pooling_method: "mean_li" # mean, li, average_li, mean_li
+  q: null # Only if quantile_li
 
 train:
   loss: "info-nce" # info-nce, triplet, pairwise-ce
   tau: 0.07 # Only for CE losses
   margin: null # Only for triplet loss
   # --- optimizer ---
-  lr: 2.0e-5
+  lr: 1.0e-5
   weight_decay: 0.01
   # --- checkpointing ---
   checkpoint_metric: "val_mrr"
@@ -51,3 +53,4 @@ train:
   use_wandb: true
   log_model: true
   watch: "gradients" # parameters, gradients, all, none
+```

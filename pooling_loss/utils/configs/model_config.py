@@ -14,4 +14,3 @@ class ModelConfig(DictAccessMixin):
     is_decoder_model: bool = False
     pooling_method: Literal["mean", "li", "average_li", "mean_li"] = "mean"
     chunk_size: Optional[int] = 64  # Only for LI methods
-    q: Optional[float] = None  # Only if quantile_li

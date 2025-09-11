@@ -4,9 +4,9 @@ import json
 import logging
 import os.path as osp
 
-import wandb
 from mteb import MTEB
 
+import wandb
 from pooling_loss.experiments.mteb_pooling_loss import MTEBPoolingLoss
 from pooling_loss.utils.argparsers import TestArgparse
 from pooling_loss.utils.configs import BaseConfig
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     output_dir = osp.join(
         args.logs_dir,
         f"{cfg.group_name}",  # put loss, pooling method and max_length in group name
-        f"{model_name}-{cfg.model.pooling_method}-{cfg.model.q}",
+        f"{model_name}-{cfg.model.pooling_method}",
         cfg.data.ds_name,
         pe_status,
         task_name_safe,

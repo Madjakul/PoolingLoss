@@ -58,7 +58,7 @@ def setup_trainer(
 
     name = (
         f"{cfg.model.base_model_name}-{cfg.data.ds_name}"
-        f"-pooling:{cfg.model.pooling_method}-q:{cfg.model.q}-loss:{cfg.train.loss}"
+        f"-pooling:{cfg.model.pooling_method}-loss:{cfg.train.loss}"
     ).replace("/", "-")
 
     # Learning rate monitor

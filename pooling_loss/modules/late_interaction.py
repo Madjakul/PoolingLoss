@@ -1,5 +1,6 @@
 # pooling_loss/modules/late_interaction.py
 
+import logging
 from typing import TYPE_CHECKING
 
 import torch
@@ -14,6 +15,7 @@ class LateInteraction(torch.nn.Module):
 
     def __init__(self, cfg: "BaseConfig") -> None:
         super().__init__()
+        logging.info("Using Late Interaction pooling method")
         self.cfg = cfg
         self.register_buffer("IGNORE", torch.tensor(float("-inf")))
 

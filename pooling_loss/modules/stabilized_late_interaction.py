@@ -1,5 +1,6 @@
 # pooling_loss/modules/stabilized_late_interaction.py
 
+import logging
 from typing import TYPE_CHECKING
 
 import torch
@@ -14,6 +15,7 @@ class StabilizedLateInteraction(torch.nn.Module):
 
     def __init__(self, cfg: "BaseConfig") -> None:
         super().__init__()
+        logging.info("Using Stabilized Late Interaction pooling method")
         self.cfg = cfg
         self.register_buffer("IGNORE", torch.tensor(float("-inf")))
 
@@ -44,5 +46,5 @@ class StabilizedLateInteraction(torch.nn.Module):
         is_padding_mask = q_mask == 0
         masked_max_sim = max_sim_values.masked_fill(is_padding_mask, 0.0)
         scores = masked_max_sim.sum(dim=-1) / q_lengths  # (B, 2B)
-        scores = scores.clamp(-1.0, 1.0)  # because of fp32 rounding
+        scores = scores.clamp(-1.0, 1.0)  # because of rounding
         return scores
