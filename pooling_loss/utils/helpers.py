@@ -1,5 +1,6 @@
 # pooling_loss/utils/helpers.py
 
+from collections.abc import MutableMapping
 from typing import Any
 
 from transformers import AutoTokenizer, PreTrainedTokenizerBase
@@ -26,6 +27,20 @@ def get_tokenizer(model_name: str, **kwargs) -> "PreTrainedTokenizerBase":
         else:
             raise ValueError("Tokenizer has neither pad_token nor eos_token defined.")
     return tokenizer
+
+
+def flatten_dict(
+    d: MutableMapping, parent_key: str = "", sep: str = "."
+) -> MutableMapping:
+    """Flattens a nested dictionary into a single-level dictionary."""
+    items = []
+    for k, v in d.items():
+        new_key = parent_key + sep + k if parent_key else k
+        if isinstance(v, MutableMapping):
+            items.extend(flatten_dict(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
 
 
 class DictAccessMixin:

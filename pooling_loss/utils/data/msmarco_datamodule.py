@@ -67,17 +67,14 @@ class MSMarcoDatamodule(L.LightningDataModule):
             and osp.getsize(self.processed_ds_path) > 0
         ):
             return
-        datasets.load_dataset("microsoft/ms_marco")
+        datasets.load_dataset(
+            "sentence-transformers/msmarco-msmarco-MiniLM-L6-v3", name="triplet"
+        )
 
     def setup(self, stage: Optional[str] = None) -> None:
-        if stage == "fit" or stage is None:
-            self.fit_setup()
-        if stage == "test" or stage is None:
-            self.test_setup()
-
-    def fit_setup(self) -> None:
         train_path = osp.join(self.processed_ds_path, "train")
         val_path = osp.join(self.processed_ds_path, "val")
+        test_path = osp.join(self.processed_ds_path, "test")
 
         if osp.exists(train_path) and osp.exists(val_path):
             logging.info(f"Loading processed data from disk: {self.processed_ds_path}")
@@ -87,46 +84,35 @@ class MSMarcoDatamodule(L.LightningDataModule):
 
         logging.info("Processed data not found. Running full preprocessing pipeline...")
         ds = datasets.load_dataset(
-            path="microsoft/ms_marco",
-            name="v1.1",
+            path="sentence-transformers/msmarco-msmarco-MiniLM-L6-v3",
+            name="triplet",
+            split="train",
             cache_dir=self.cache_dir,
         )
-        columns = ds["train"].column_names  # type: ignore
+        ds = ds.train_test_split(test_size=0.2, shuffle=True)
 
-        logging.info("Filtering out train examples with no positive passages...")
-        ds["train"] = ds["train"].filter(  # type: ignore
-            self.filter_no_positive, num_proc=self.num_proc
-        )
-        logging.info("Creating train triplets from the dataset...")
-        self.train_ds = ds["train"].map(  # type: ignore
-            self.create_triplets,
-            batched=True,
-            num_proc=self.num_proc,
-            remove_columns=columns,
-            load_from_cache_file=self.cfg.data.load_from_cache_file,
-        )
         logging.info("Tokenizing train triplets...")
-        self.train_ds = self.train_ds.map(
+        self.train_ds = ds["train"].map(
             self.tokenize,
             batched=True,
             num_proc=self.num_proc,
             remove_columns=["positive", "negative", "query"],
             load_from_cache_file=self.cfg.data.load_from_cache_file,
         )
-        logging.info("Filtering out validation examples with no positive passages...")
-        ds["validation"] = ds["validation"].filter(  # type: ignore
-            self.filter_no_positive, num_proc=self.num_proc
-        )
-        logging.info("Creating validation triplets from the dataset...")
-        self.val_ds = ds["validation"].map(  # type: ignore
-            self.create_triplets,
+
+        ds = ds["test"].train_test_split(test_size=0.5, shuffle=True)
+
+        logging.info("Tokenizing validation triplets...")
+        self.val_ds = ds["train"].map(
+            self.tokenize,
             batched=True,
             num_proc=self.num_proc,
-            remove_columns=columns,
+            remove_columns=["positive", "negative", "query"],
             load_from_cache_file=self.cfg.data.load_from_cache_file,
         )
-        logging.info("Tokenizing validation triplets...")
-        self.val_ds = self.val_ds.map(
+
+        logging.info("Tokenizing test triplets...")
+        self.test_ds = ds["test"].map(
             self.tokenize,
             batched=True,
             num_proc=self.num_proc,
@@ -136,66 +122,23 @@ class MSMarcoDatamodule(L.LightningDataModule):
 
         self.train_ds.set_format("torch")
         self.val_ds.set_format("torch")
+        self.test_ds.set_format("torch")
 
-        # --- Save the processed data to disk for future runs ---
         logging.info(f"Saving processed data to disk: {self.processed_ds_path}")
         os.makedirs(self.processed_ds_path, exist_ok=True)
         self.train_ds.save_to_disk(train_path)
         self.val_ds.save_to_disk(val_path)
-
-    def test_setup(self) -> None:
-        test_path = osp.join(self.processed_ds_path, "test")
-
-        if osp.exists(test_path):
-            logging.info(f"Loading processed data from disk: {self.processed_ds_path}")
-            self.test_ds = datasets.load_from_disk(test_path)
-            return
-
-        logging.info("Processed data not found. Running full preprocessing pipeline...")
-        ds = datasets.load_dataset(
-            path="microsoft/ms_marco",
-            name="v1.1",
-            cache_dir=self.cache_dir,
-        )
-        columns = ds["test"].column_names  # type: ignore
-
-        logging.info("Filtering out test examples with no positive passages...")
-        ds["test"] = ds["test"].filter(  # type: ignore
-            self.filter_no_positive, num_proc=self.num_proc
-        )
-        logging.info("Creating test triplets from the dataset...")
-        self.test_ds = ds["test"].map(  # type: ignore
-            self.create_triplets,
-            batched=True,
-            num_proc=self.num_proc,
-            remove_columns=columns,
-            load_from_cache_file=self.cfg.data.load_from_cache_file,
-        )
-        logging.info("Tokenizing test triplets...")
-        self.test_ds = self.test_ds.map(
-            self.tokenize,
-            batched=True,
-            num_proc=self.num_proc,
-            remove_columns=["positive", "negative", "query"],
-            load_from_cache_file=self.cfg.data.load_from_cache_file,
-        )
-
-        self.test_ds.set_format("torch")
-
-        # --- Save the processed data to disk for future runs ---
-        logging.info(f"Saving processed data to disk: {self.processed_ds_path}")
-        os.makedirs(self.processed_ds_path, exist_ok=True)
         self.test_ds.save_to_disk(test_path)
 
     def train_dataloader(self) -> DataLoader:
         if self.cfg.mode == "tune":
-            logging.info(f"Using a 20% subset of MSMarco for tuning.")
-            num_samples = int(len(self.train_ds) * 0.1)
+            logging.info(f"Using a 50% subset of MSMarco for tuning.")
+            num_samples = int(len(self.train_ds) * 0.5)
             head = self.train_ds.select(range(num_samples))  # type: ignore
             tail = self.train_ds.select(reversed(range(num_samples)))  # type: ignore
             train_ds = datasets.concatenate_datasets([head, tail]).sort("length")
         else:
-            train_ds = self.train_ds
+            train_ds = self.train_ds.sort("length")
         return DataLoader(
             train_ds,  # type: ignore
             batch_size=self.cfg.data.batch_size,
@@ -205,11 +148,11 @@ class MSMarcoDatamodule(L.LightningDataModule):
 
     def val_dataloader(self) -> DataLoader:
         if self.cfg.mode == "tune":
-            logging.info(f"Using a 40% subset of MSMarco for tuning validation.")
-            num_samples = int(len(self.val_ds) * 0.2)
+            logging.info(f"Using a 50% subset of MSMarco for tuning validation.")
+            num_samples = int(len(self.val_ds) * 0.5)
             head = self.val_ds.select(range(num_samples))  # type: ignore
             tail = self.val_ds.select(reversed(range(num_samples)))  # type: ignore
-            val_ds = datasets.concatenate_datasets([head, tail]).sort("length")
+            val_ds = datasets.concatenate_datasets([head, tail])
         else:
             val_ds = self.val_ds
         return DataLoader(
@@ -224,38 +167,3 @@ class MSMarcoDatamodule(L.LightningDataModule):
             batch_size=self.cfg.data.batch_size,
             num_workers=self.num_proc,
         )
-
-    @staticmethod
-    def filter_no_positive(example: Dict[str, Any]) -> bool:
-        """Filter out examples that have no positive passage."""
-        return 1 in example["passages"]["is_selected"]
-
-    @staticmethod
-    def create_triplets(batch: Dict[str, Any]) -> Dict[str, List[Any]]:
-        """Map function to transform a batch of MS MARCO examples into query,
-        positive, negative text triplets."""
-        queries = []
-        positives = []
-        negatives = []
-
-        for i in range(len(batch["query"])):
-            query_text = batch["query"][i]
-            passages = batch["passages"][i]
-
-            try:
-                positive_idx = passages["is_selected"].index(1)
-                positive_text = passages["passage_text"][positive_idx]
-            except ValueError:
-                # Should not happen if we filter first, but as a safeguard
-                continue
-
-            # Use other passages as hard negatives
-            for j, is_selected in enumerate(passages["is_selected"]):
-                if is_selected:
-                    continue
-                negative_text = passages["passage_text"][j]
-                queries.append(query_text)
-                positives.append(positive_text)
-                negatives.append(negative_text)
-
-        return {"query": queries, "positive": positives, "negative": negatives}

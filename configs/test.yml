@@ -2,11 +2,11 @@
 
 mode: "test"
 project_name: "pooling-loss"
-group_name: "test-poolingloss-512-mean-infonce"
+group_name: "test-poolingloss-512-msmarco-infonce"
 
 data:
   ds_name: "all" # allnli, msmarco, booksum, all
-  batch_size: 24
+  batch_size: 10
   tokenizer_name: "FacebookAI/roberta-base"
   max_length: 512
   padding: false # max_length
@@ -21,7 +21,8 @@ model:
   pooling_method: "mean"
 
 test:
-  tasks: ["MSMARCO", "FEVER", "STSBenchmark", "SummEvalSummarization.v2"]
+  run_mteb: true
+  tasks: ["MSMARCO", "FEVER"] #, "STSBenchmark", "SummEvalSummarization.v2"]
   # --- trainer ---
   device: "gpu"
   num_devices: 1

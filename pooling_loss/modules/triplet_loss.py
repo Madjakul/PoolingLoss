@@ -1,5 +1,6 @@
 # pooling_loss/modules/triplet_loss.py
 
+import logging
 from typing import TYPE_CHECKING, Dict
 
 import torch
@@ -19,34 +20,33 @@ class TripletLoss(BaseLoss):
         assert (
             self.cfg.execution.margin is not None
         ), "Margin must be set in the configuration for triplet loss"
+        logging.info(f"Using Triplet Loss with margin={self.cfg.execution.margin}")
         self.register_buffer("margin", torch.tensor(self.cfg.execution.margin))
 
     def forward(
         self,
         query_embs: Float[torch.Tensor, "batch seq hidden"],
-        key_embs: Float[torch.Tensor, "two_times_batch seq hidden"],
+        key_embs: Float[torch.Tensor, "n_times_batch seq hidden"],
         q_mask: Int[torch.Tensor, "batch seq"],
-        k_mask: Int[torch.Tensor, "two_times_batch seq"],
+        k_mask: Int[torch.Tensor, "n_times_batch seq"],
+        targets: Int[torch.Tensor, "n_times_batch"],
     ) -> Dict[str, torch.Tensor]:
-        batch_size = query_embs.size(0)
-
-        # Compute the (B, 2B) similarity matrix
         all_scores = self.pool(
-            query_embs=query_embs,  # (B, S, H)
-            key_embs=key_embs,  # (2B, S, H)
-            q_mask=q_mask,  # (B, S)
-            k_mask=k_mask,  # (2B, S)
+            query_embs=query_embs,
+            key_embs=key_embs,
+            q_mask=q_mask,
+            k_mask=k_mask,
         )
 
-        targets = torch.arange(batch_size, device=query_embs.device)
-        poss = all_scores[targets, targets]
-        negs = all_scores[targets, targets + batch_size]
+        local_targets = torch.arange(query_embs.size(0), device=query_embs.device)
+
+        poss = all_scores[local_targets, targets]
+        negs = all_scores[local_targets, targets + key_embs.size(0) // 2]
 
         loss = F.relu(negs - poss + self.margin).mean()  # type: ignore
 
         return {
             "all_scores": all_scores,
-            "targets": targets,
             "poss": poss,
             "negs": negs,
             "loss": loss,

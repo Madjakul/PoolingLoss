@@ -1,3 +1,76 @@
+# pooling_loss/modules/chunked_late_interaction.py
+
+# import logging
+# from typing import TYPE_CHECKING
+#
+# import torch
+# import torch.nn.functional as F
+# from jaxtyping import Float, Int
+#
+# if TYPE_CHECKING:
+#     from pooling_loss.utils.configs import BaseConfig
+#
+#
+# class LateInteraction(torch.nn.Module):
+#     """Implements a memory-efficient, key-chunked version of the standard late
+#     interaction pooling."""
+#
+#     def __init__(self, cfg: "BaseConfig") -> None:
+#         super().__init__()
+#         logging.info("Using Key-Chunked 'Normal' Late Interaction")
+#         # A single chunk size for iterating over keys
+#         self.chunk_size = cfg.model.chunk_size
+#
+#     def forward(
+#         self,
+#         query_embs: Float[torch.Tensor, "batch seq hidden"],
+#         key_embs: Float[torch.Tensor, "num_keys seq hidden"],
+#         q_mask: Int[torch.Tensor, "batch seq"],
+#         k_mask: Int[torch.Tensor, "num_keys seq"],
+#     ) -> Float[torch.Tensor, "batch num_keys"]:
+#
+#         num_keys = key_embs.size(0)
+#         all_chunk_scores = []
+#
+#         # 1. Prepare the FULL query tensor once, as it fits in memory
+#         q_embs_norm = F.normalize(query_embs.unsqueeze(1), p=2, dim=-1)
+#         q_mask_unsqueezed = q_mask.unsqueeze(1)
+#
+#         # 2. Loop ONLY over the keys in chunks
+#         for i in range(0, num_keys, self.chunk_size):
+#             # Get the current chunk of keys
+#             key_chunk = key_embs[i : i + self.chunk_size]
+#             k_mask_chunk = k_mask[i : i + self.chunk_size]
+#
+#             # Prepare key chunk tensors
+#             k_embs_chunk_norm = F.normalize(key_chunk.unsqueeze(0), p=2, dim=-1)
+#
+#             # --- Score all queries against the current key chunk ---
+#
+#             # Compute similarity matrix between ALL queries and the KEY CHUNK
+#             sim_matrix_chunk = torch.einsum(
+#                 "insh, mjth->ijst", q_embs_norm, k_embs_chunk_norm
+#             )
+#             valid_mask_chunk = torch.einsum(
+#                 "ixs, xjt->ijst",
+#                 q_mask_unsqueezed.float(),
+#                 k_mask_chunk.unsqueeze(0).float(),
+#             ).bool()
+#
+#             # Apply your desired 0.0 masking
+#             masked_sim_chunk = sim_matrix_chunk * valid_mask_chunk.float()
+#
+#             # Max-pool and sum to get the scores for this chunk
+#             max_sim_values, _ = masked_sim_chunk.max(dim=-1)
+#             chunk_scores = max_sim_values.sum(dim=-1)
+#
+#             all_chunk_scores.append(chunk_scores)
+#
+#         # 3. Concatenate results from all key chunks
+#         scores = torch.cat(all_chunk_scores, dim=1)
+#         return scores
+
+
 # pooling_loss/modules/late_interaction.py
 
 import logging

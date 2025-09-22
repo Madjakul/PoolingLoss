@@ -12,8 +12,10 @@ from ray.tune.integration.pytorch_lightning import TuneReportCheckpointCallback
 
 from pooling_loss.callbacks import (
     GradNormMonitor,
+    LogarithmicValidationCallback,
     PositionalEmbeddingPCA,
     PositionalEmbeddingTracker,
+    VarianceMonitor,
 )
 from pooling_loss.modules import PoolingLoss
 from pooling_loss.utils.configs.base_config import BaseConfig
@@ -67,6 +69,8 @@ def setup_trainer(
     callbacks.append(GradNormMonitor())
     callbacks.append(PositionalEmbeddingTracker())
     callbacks.append(PositionalEmbeddingPCA(output_dir=osp.join(logs_dir, name)))
+    callbacks.append(LogarithmicValidationCallback(start_step=1, growth=1.5))
+    callbacks.append(VarianceMonitor(window_size=50))
 
     # Model checkpoint callback if checkpoint_dir is provided
     if checkpoint_dir is not None:
@@ -118,7 +122,9 @@ def setup_trainer(
         devices=cfg.train.num_devices,
         max_steps=cfg.train.max_steps,
         max_epochs=cfg.train.max_epochs,
-        val_check_interval=cfg.train.val_check_interval,
+        num_sanity_val_steps=0,
+        val_check_interval=100_000_000,
+        check_val_every_n_epoch=None,
         enable_checkpointing=checkpoint_dir is not None,
         logger=loggers,
         callbacks=callbacks,
@@ -149,6 +155,7 @@ def train_tune(
     model = PoolingLoss(cfg)
     callbacks = []
     callbacks.append(LearningRateMonitor(logging_interval="step"))
+    callbacks.append(LogarithmicValidationCallback(start_step=10, growth=1.5))
     callbacks.append(
         TuneReportCheckpointCallback(
             {
@@ -176,7 +183,9 @@ def train_tune(
         devices=cfg.tune.num_devices_per_trial,
         max_steps=cfg.tune.max_steps,
         max_epochs=cfg.tune.max_epochs,
-        val_check_interval=cfg.tune.val_check_interval,
+        num_sanity_val_steps=0,
+        val_check_interval=100_000_000,
+        check_val_every_n_epoch=None,
         callbacks=callbacks,
         enable_checkpointing=False,
         logger=loggers,

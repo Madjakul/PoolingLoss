@@ -1,14 +1,15 @@
 # pooling_loss/utils/configs/test_config.py
 
 from dataclasses import dataclass, field
-from typing import List, Literal
+from typing import List, Literal, Optional
 
 from pooling_loss.utils.helpers import DictAccessMixin
 
 
 @dataclass
 class TestConfig(DictAccessMixin):
-    tasks: List[str] = field(default_factory=list)
+    run_mteb: bool = False
+    tasks: Optional[List[str]] = field(default_factory=list)
     # --- trainer ---
     gather: bool = False
     device: Literal["cpu", "gpu"] = "gpu"

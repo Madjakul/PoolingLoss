@@ -14,6 +14,7 @@ from pooling_loss.modules.info_nce_loss import InfoNCELoss
 from pooling_loss.modules.language_model import LanguageModel
 from pooling_loss.modules.pairwise_ce_loss import PairwiseCELoss
 from pooling_loss.modules.triplet_loss import TripletLoss
+from pooling_loss.utils.helpers import flatten_dict
 
 if TYPE_CHECKING:
     from pooling_loss.utils.configs import BaseConfig
@@ -38,7 +39,8 @@ class PoolingLoss(L.LightningModule):
 
     def __init__(self, cfg: "BaseConfig") -> None:
         super().__init__()
-        self.save_hyperparameters()
+        flat_params = flatten_dict(cfg.to_dict())
+        self.save_hyperparameters(flat_params)
         self.cfg = cfg
         self.lm = LanguageModel(cfg)
         self.contrastive_loss = self.loss_map[cfg.execution.loss](cfg)
@@ -83,8 +85,6 @@ class PoolingLoss(L.LightningModule):
         return self.lm(input_ids=input_ids, attention_mask=attention_mask)
 
     def training_step(self, batch, batch_idx: int) -> Float[torch.Tensor, ""]:
-        """Training step with efficient all_gather for keys."""
-        # 1. Get local embeddings for query, positive, and negative keys
         q_embs = self(
             input_ids=batch["input_ids"],
             attention_mask=batch["attention_mask"],
@@ -97,14 +97,17 @@ class PoolingLoss(L.LightningModule):
             input_ids=batch["neg_input_ids"],
             attention_mask=batch["neg_attention_mask"],
         )
-
-        # Keep local query mask
         q_mask = batch["attention_mask"]
+        batch_size = q_embs.size(0)
 
         # 2. If in a distributed setting, gather all keys (and their masks) from all GPUs
         if self.trainer.world_size > 1 and self.cfg.execution.gather:
             # all_gather adds a dimension at the start, so we flatten it with the batch dim
             # Shape changes from [num_gpus, batch_size, seq, hidden] -> [global_batch_size, seq, hidden]
+            targets = (
+                torch.arange(batch_size, device=q_embs.device)
+                + batch_size * self.trainer.global_rank
+            )
             all_pos_embs = self.all_gather(pos_embs, sync_grads=True).flatten(0, 1)
             all_pos_mask = self.all_gather(batch["pos_attention_mask"]).flatten(0, 1)
             all_neg_embs = self.all_gather(neg_embs, sync_grads=True).flatten(0, 1)
@@ -112,27 +115,35 @@ class PoolingLoss(L.LightningModule):
 
             k_embs = torch.cat([all_pos_embs, all_neg_embs], dim=0)
             k_mask = torch.cat([all_pos_mask, all_neg_mask], dim=0)
+            loss_metrics = self.contrastive_loss(
+                query_embs=q_embs,
+                key_embs=k_embs,
+                q_mask=q_mask,
+                k_mask=k_mask,
+                targets=targets,
+            )
         else:
-            # If not distributed, just use the local keys
+            targets = torch.arange(batch_size, device=q_embs.device)
             k_embs = torch.cat([pos_embs, neg_embs], dim=0)
             k_mask = torch.cat(
                 [batch["pos_attention_mask"], batch["neg_attention_mask"]], dim=0
             )
+            loss_metrics = self.contrastive_loss(
+                query_embs=q_embs,
+                key_embs=k_embs,
+                q_mask=q_mask,
+                k_mask=k_mask,
+                targets=targets,
+            )
 
-        # 3. Compute loss with local queries against the global key bank
-        loss_metrics = self.contrastive_loss(
-            query_embs=q_embs,
-            key_embs=k_embs,
-            q_mask=q_mask,
-            k_mask=k_mask,
-        )
+        loss = loss_metrics["loss"]
 
-        # 4. Log metrics
         alignment_uniformity_metrics = self.alignment_uniformity_loss(
             query_embs=q_embs,
             key_embs=k_embs,
             q_mask=q_mask,
             k_mask=k_mask,
+            targets=targets,
         )
         self.log_dict(
             {
@@ -141,22 +152,22 @@ class PoolingLoss(L.LightningModule):
                     "uniformity_loss"
                 ],
             },
-            prog_bar=True,
+            prog_bar=False,
             on_step=True,
             on_epoch=False,
-            sync_dist=False,  # These are local metrics
+            sync_dist=False,
             batch_size=self.cfg.data.batch_size,
         )
         self.log(
             "loss",
-            loss_metrics["loss"],
+            loss,
             prog_bar=True,
             on_step=True,
             on_epoch=True,
             sync_dist=True,
             batch_size=self.cfg.data.batch_size,
         )
-        return loss_metrics["loss"]
+        return loss
 
     # ... validation and test methods remain unchanged ...
     def on_validation_start(self):
@@ -180,25 +191,43 @@ class PoolingLoss(L.LightningModule):
             input_ids=batch["neg_input_ids"],
             attention_mask=batch["neg_attention_mask"],
         )
-        k_embs = torch.cat([pos_embs, neg_embs], dim=0)
-        k_mask = torch.cat(
-            [batch["pos_attention_mask"], batch["neg_attention_mask"]],
-            dim=0,
-        )
-        loss_metrics = self.contrastive_loss(
-            query_embs=q_embs,
-            key_embs=k_embs,
-            q_mask=batch["attention_mask"],
-            k_mask=k_mask,
-        )
-        alignment_uniformity_metrics = self.alignment_uniformity_loss(
-            query_embs=q_embs,
-            key_embs=k_embs,
-            q_mask=batch["attention_mask"],
-            k_mask=k_mask,
-        )
+        q_mask = batch["attention_mask"]
+        batch_size = q_embs.size(0)
+
+        if self.trainer.world_size > 1 and self.cfg.execution.gather:
+            targets = (
+                torch.arange(batch_size, device=q_embs.device)
+                + batch_size * self.trainer.global_rank
+            )
+            all_pos_embs = self.all_gather(pos_embs, sync_grads=True).flatten(0, 1)
+            all_pos_mask = self.all_gather(batch["pos_attention_mask"]).flatten(0, 1)
+            all_neg_embs = self.all_gather(neg_embs, sync_grads=True).flatten(0, 1)
+            all_neg_mask = self.all_gather(batch["neg_attention_mask"]).flatten(0, 1)
+
+            k_embs = torch.cat([all_pos_embs, all_neg_embs], dim=0)
+            k_mask = torch.cat([all_pos_mask, all_neg_mask], dim=0)
+            loss_metrics = self.contrastive_loss(
+                query_embs=q_embs,
+                key_embs=k_embs,
+                q_mask=q_mask,
+                k_mask=k_mask,
+                targets=targets,
+            )
+        else:
+            targets = torch.arange(batch_size, device=q_embs.device)
+            k_embs = torch.cat([pos_embs, neg_embs], dim=0)
+            k_mask = torch.cat(
+                [batch["pos_attention_mask"], batch["neg_attention_mask"]], dim=0
+            )
+            loss_metrics = self.contrastive_loss(
+                query_embs=q_embs,
+                key_embs=k_embs,
+                q_mask=q_mask,
+                k_mask=k_mask,
+                targets=targets,
+            )
+
         all_scores = loss_metrics["all_scores"]
-        targets = loss_metrics["targets"]
         poss = loss_metrics["poss"]
         negs = loss_metrics["negs"]
         batch_size = targets.size(0)
@@ -211,6 +240,14 @@ class PoolingLoss(L.LightningModule):
         self.val_hr5.update(all_scores, targets)
         self.val_hr10.update(all_scores, targets)
         self.val_rr.update(all_scores, targets)
+
+        alignment_uniformity_metrics = self.alignment_uniformity_loss(
+            query_embs=q_embs,
+            key_embs=k_embs,
+            q_mask=q_mask,
+            k_mask=k_mask,
+            targets=targets,
+        )
         self.log_dict(
             {
                 "val_alignment_loss": alignment_uniformity_metrics["alignment_loss"],
@@ -274,20 +311,23 @@ class PoolingLoss(L.LightningModule):
             [batch["pos_attention_mask"], batch["neg_attention_mask"]],
             dim=0,
         )
+        batch_size = q_embs.size(0)
+        targets = torch.arange(batch_size, device=q_embs.device)
         loss_metrics = self.contrastive_loss(
             query_embs=q_embs,
             key_embs=k_embs,
             q_mask=batch["attention_mask"],
             k_mask=k_mask,
+            targets=targets,
         )
         alignment_uniformity_metrics = self.alignment_uniformity_loss(
             query_embs=q_embs,
             key_embs=k_embs,
             q_mask=batch["attention_mask"],
             k_mask=k_mask,
+            targets=targets,
         )
         all_scores = loss_metrics["all_scores"]
-        targets = loss_metrics["targets"]
         poss = loss_metrics["poss"]
         negs = loss_metrics["negs"]
         batch_size = targets.size(0)

@@ -5,8 +5,8 @@ project_name: "pooling-loss"
 group_name: "tune-poolingloss-512-pairwisece"
 
 data:
-  ds_name: "all" # allnli, msmarco, booksum, all
-  batch_size: 24
+  ds_name: "msmarco" # allnli, msmarco, booksum, all
+  batch_size: 32
   tokenizer_name: "FacebookAI/roberta-base"
   max_length: 512
   padding: false # max_length
@@ -25,7 +25,7 @@ tune:
   tau: # Only from CE losses
     # null
     type: choice
-    values: [0.05, 0.07, 0.1, 0.15, 0.2]
+    values: [0.05, 0.07, 0.1, 0.2, 1.0]
   margin: # Only for triplet loss
     null
     # type: uniform
@@ -43,21 +43,20 @@ tune:
   # --- trainer ---
   device: "gpu"
   num_devices_per_trial: 1
-  num_cpus_per_trial: 10
+  num_cpus_per_trial: 16
   max_steps: -1
   max_epochs: 2
-  log_every_n_steps: 10
+  log_every_n_steps: 1
   accumulate_grad_batches: 1
   gradient_clip_val: null
   precision: "16-mixed"
   # --- tuner ---
-  metric: "val_auroc" # val_mrr, val_auroc
+  metric: "val_mrr" # val_mrr, val_auroc
   mode: "max" # max, min
   num_samples: 40
   max_concurrent_trials: 3
   time_budget_s: 172800 # 48 h in s
   max_t: 2 # Same as number of epochs
   grace_period: 1
-  val_check_interval: 0.5
   # --- wandb ---
   use_wandb: True

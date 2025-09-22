@@ -2,7 +2,9 @@
 
 import logging
 import os
+import random
 
+import numpy as np
 import torch
 
 from pooling_loss.modules import PoolingLoss
@@ -18,7 +20,19 @@ logging_config()
 torch.cuda.empty_cache()
 
 
+def set_seed(seed: int = 7):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    logging.info(f"Random seed set as {seed}")
+
+
 if __name__ == "__main__":
+    set_seed()
     args = TrainArgparse.parse_known_args()
     cfg = BaseConfig(mode="train").from_yaml(args.config_path)
 
@@ -47,6 +61,7 @@ if __name__ == "__main__":
         individual_processed_paths=args.individual_processed_paths,
         cache_dir=args.cache_dir,
     )
+    dm.setup("fit")
 
     trainer.fit(model=model, datamodule=dm)
     logging.info("--- Fine-tuning finished ---")

@@ -8,7 +8,7 @@ DATA_ROOT=$PROJECT_ROOT/data                     # Do not modify
 CONFIG_PATH=$PROJECT_ROOT/configs/tune.yml
 RAY_STORAGE_PATH=$PROJECT_ROOT/ray_logs
 LOGS_DIR=$PROJECT_ROOT/logs
-PROCESSED_DS_PATH=/scratch/$USER/Datasets/pooling-loss/facebookai-roberta-base/padding
+PROCESSED_DS_PATH=/scratch/$USER/Datasets/msmarco/facebookai-roberta-base/padding
 
 # --------------------------------------------------------------------------------------
 
@@ -18,14 +18,12 @@ PROCESSED_DS_PATH=/scratch/$USER/Datasets/pooling-loss/facebookai-roberta-base/p
 #     "/scratch/$USER/Datasets/booksum/facebookai-roberta-base/padding"
 # )
 # CACHE_DIR=$PROJECT_ROOT/../cache/
-NUM_PROC=32
-#
+NUM_PROC=48
 
 # **************************************************************************************
 
 mkdir -p "$RAY_STORAGE_PATH" || true
 mkdir -p "$LOGS_DIR" || true
-mkdir -p "$PROJECT_ROOT/tmp/" || true
 
 cmd=(python3 "$PROJECT_ROOT/tune.py"
     --config_path "$CONFIG_PATH"
