@@ -78,10 +78,6 @@ class PoolingLoss(L.LightningModule):
         attention_mask: Int[torch.Tensor, "batch seq"],
         **kwargs: Any,
     ) -> Float[torch.Tensor, "batch seq hidden"]:
-        """Forward pass through language model.
-
-        Simplified back to its original form.
-        """
         return self.lm(input_ids=input_ids, attention_mask=attention_mask)
 
     def training_step(self, batch, batch_idx: int) -> Float[torch.Tensor, ""]:
@@ -100,7 +96,6 @@ class PoolingLoss(L.LightningModule):
         q_mask = batch["attention_mask"]
         batch_size = q_embs.size(0)
 
-        # 2. If in a distributed setting, gather all keys (and their masks) from all GPUs
         if self.trainer.world_size > 1 and self.cfg.execution.gather:
             # all_gather adds a dimension at the start, so we flatten it with the batch dim
             # Shape changes from [num_gpus, batch_size, seq, hidden] -> [global_batch_size, seq, hidden]
@@ -169,9 +164,7 @@ class PoolingLoss(L.LightningModule):
         )
         return loss
 
-    # ... validation and test methods remain unchanged ...
     def on_validation_start(self):
-        """Move validation metrics to correct device before validation."""
         self.val_auroc = BinaryAUROC(device=self.device)
         self.val_hr1 = HitRate(k=1, device=self.device)
         self.val_hr5 = HitRate(k=5, device=self.device)
@@ -194,38 +187,18 @@ class PoolingLoss(L.LightningModule):
         q_mask = batch["attention_mask"]
         batch_size = q_embs.size(0)
 
-        if self.trainer.world_size > 1 and self.cfg.execution.gather:
-            targets = (
-                torch.arange(batch_size, device=q_embs.device)
-                + batch_size * self.trainer.global_rank
-            )
-            all_pos_embs = self.all_gather(pos_embs, sync_grads=True).flatten(0, 1)
-            all_pos_mask = self.all_gather(batch["pos_attention_mask"]).flatten(0, 1)
-            all_neg_embs = self.all_gather(neg_embs, sync_grads=True).flatten(0, 1)
-            all_neg_mask = self.all_gather(batch["neg_attention_mask"]).flatten(0, 1)
-
-            k_embs = torch.cat([all_pos_embs, all_neg_embs], dim=0)
-            k_mask = torch.cat([all_pos_mask, all_neg_mask], dim=0)
-            loss_metrics = self.contrastive_loss(
-                query_embs=q_embs,
-                key_embs=k_embs,
-                q_mask=q_mask,
-                k_mask=k_mask,
-                targets=targets,
-            )
-        else:
-            targets = torch.arange(batch_size, device=q_embs.device)
-            k_embs = torch.cat([pos_embs, neg_embs], dim=0)
-            k_mask = torch.cat(
-                [batch["pos_attention_mask"], batch["neg_attention_mask"]], dim=0
-            )
-            loss_metrics = self.contrastive_loss(
-                query_embs=q_embs,
-                key_embs=k_embs,
-                q_mask=q_mask,
-                k_mask=k_mask,
-                targets=targets,
-            )
+        targets = torch.arange(batch_size, device=q_embs.device)
+        k_embs = torch.cat([pos_embs, neg_embs], dim=0)
+        k_mask = torch.cat(
+            [batch["pos_attention_mask"], batch["neg_attention_mask"]], dim=0
+        )
+        loss_metrics = self.contrastive_loss(
+            query_embs=q_embs,
+            key_embs=k_embs,
+            q_mask=q_mask,
+            k_mask=k_mask,
+            targets=targets,
+        )
 
         all_scores = loss_metrics["all_scores"]
         poss = loss_metrics["poss"]
@@ -261,7 +234,6 @@ class PoolingLoss(L.LightningModule):
         )
 
     def on_validation_epoch_end(self) -> None:
-        self.log("completed_epoch", self.current_epoch, prog_bar=False)
         auroc = self.val_auroc.compute()
         avg_hr1 = self.val_hr1.compute().mean()
         avg_hr5 = self.val_hr5.compute().mean()

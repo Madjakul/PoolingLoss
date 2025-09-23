@@ -36,10 +36,8 @@ class VarianceMonitor(L.Callback):
                 )
                 return
         else:
-            # Assume outputs is the loss tensor itself
             loss = outputs
 
-        # 1. Rolling Loss Variance
         self.losses.append(loss.detach().cpu())
 
         if len(self.losses) > 1:
@@ -53,7 +51,6 @@ class VarianceMonitor(L.Callback):
                 prog_bar=True,
             )
 
-        # 2. Intra-Batch Query Length Variance
         attention_mask = batch.get("attention_mask")
         if attention_mask is not None:
             query_lengths = attention_mask.sum(dim=1).float()

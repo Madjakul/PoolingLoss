@@ -70,7 +70,7 @@ def setup_tuner(
     )
 
     asha_scheduler = AsyncHyperBandScheduler(
-        time_attr="completed_epoch",
+        time_attr="epoch",
         max_t=config.tune.max_t,
         grace_period=config.tune.grace_period,
     )

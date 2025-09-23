@@ -11,9 +11,9 @@ from lightning.pytorch.strategies import DDPStrategy
 from ray.tune.integration.pytorch_lightning import TuneReportCheckpointCallback
 
 from pooling_loss.callbacks import (
+    EvalRuntimeMonitor,
     GradNormMonitor,
     LogarithmicValidationCallback,
-    PositionalEmbeddingPCA,
     PositionalEmbeddingTracker,
     VarianceMonitor,
 )
@@ -61,14 +61,14 @@ def setup_trainer(
     name = (
         f"{cfg.model.base_model_name}-{cfg.data.ds_name}"
         f"-pooling:{cfg.model.pooling_method}-loss:{cfg.train.loss}"
-    ).replace("/", "-")
+        f"-gather:{cfg.train.gather}"
+    ).replace("/", "_")
 
-    # Learning rate monitor
     lr_monitor = LearningRateMonitor(logging_interval="step")
     callbacks.append(lr_monitor)
+    callbacks.append(EvalRuntimeMonitor())
     callbacks.append(GradNormMonitor())
     callbacks.append(PositionalEmbeddingTracker())
-    callbacks.append(PositionalEmbeddingPCA(output_dir=osp.join(logs_dir, name)))
     callbacks.append(LogarithmicValidationCallback(start_step=1, growth=1.5))
     callbacks.append(VarianceMonitor(window_size=50))
 
@@ -158,11 +158,7 @@ def train_tune(
     callbacks.append(LogarithmicValidationCallback(start_step=10, growth=1.5))
     callbacks.append(
         TuneReportCheckpointCallback(
-            {
-                "val_auroc": "val_auroc",
-                "val_mrr": "val_mrr",
-                "completed_epoch": "completed_epoch",
-            },
+            {"val_auroc": "val_auroc", "val_mrr": "val_mrr", "epoch": "epoch"},
             on="validation_epoch_end",
             save_checkpoints=False,
         )
