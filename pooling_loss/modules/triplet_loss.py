@@ -30,6 +30,7 @@ class TripletLoss(BaseLoss):
         q_mask: Int[torch.Tensor, "batch seq"],
         k_mask: Int[torch.Tensor, "n_times_batch seq"],
         targets: Int[torch.Tensor, "n_times_batch"],
+        q_input_ids: Int[torch.Tensor, "batch seq"],
     ) -> Dict[str, torch.Tensor]:
         all_scores = self.pool(
             query_embs=query_embs,

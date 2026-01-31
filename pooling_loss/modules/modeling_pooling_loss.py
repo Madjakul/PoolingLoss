@@ -116,6 +116,7 @@ class PoolingLoss(L.LightningModule):
                 q_mask=q_mask,
                 k_mask=k_mask,
                 targets=targets,
+                q_input_ids=batch["input_ids"],
             )
         else:
             targets = torch.arange(batch_size, device=q_embs.device)
@@ -129,6 +130,7 @@ class PoolingLoss(L.LightningModule):
                 q_mask=q_mask,
                 k_mask=k_mask,
                 targets=targets,
+                q_input_ids=batch["input_ids"],
             )
 
         loss = loss_metrics["loss"]
@@ -198,6 +200,7 @@ class PoolingLoss(L.LightningModule):
             q_mask=q_mask,
             k_mask=k_mask,
             targets=targets,
+            q_input_ids=batch["input_ids"],
         )
 
         all_scores = loss_metrics["all_scores"]
@@ -291,6 +294,7 @@ class PoolingLoss(L.LightningModule):
             q_mask=batch["attention_mask"],
             k_mask=k_mask,
             targets=targets,
+            q_input_ids=batch["input_ids"],
         )
         alignment_uniformity_metrics = self.alignment_uniformity_loss(
             query_embs=q_embs,
